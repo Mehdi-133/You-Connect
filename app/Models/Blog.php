@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BlogStatus;
 use Database\Factories\BlogFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -37,6 +38,16 @@ class Blog extends Model
         return $this->morphMany(Comment::class, 'commentable');
 
     }
+
+
+    protected $casts = [
+        'you_coder_id' => 'integer',
+        'like_count' => 'integer',
+        'status' => BlogStatus::class,
+        'approved_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 
 
 }

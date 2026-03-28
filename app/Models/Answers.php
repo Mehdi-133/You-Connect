@@ -39,6 +39,15 @@ class Answers extends Model
     {
         return $this->morphMany(Comment::class, 'commentable');
     }
+
+    protected $casts = [
+        'question_id' => 'integer',
+        'you_coder_id' => 'integer',
+        'is_accepted' => 'boolean',
+        'vote_count' => 'integer',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 }
 
 

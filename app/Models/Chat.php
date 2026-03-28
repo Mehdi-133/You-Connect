@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ChatType;
 use Database\Factories\ChatFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -33,6 +34,13 @@ class Chat extends Model
     {
         return $this->hasMany(Message::class);
     }
+
+    protected $casts = [
+        'club_id' => 'integer',
+        'type' => ChatType::class,
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 
 
 }

@@ -24,5 +24,10 @@ class Tag extends Model
         return $this->belongsToMany(Questions::class, 'question_tag');
     }
 
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
 
 }

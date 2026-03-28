@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\QuestionStatus;
 use Database\Factories\QuestionsFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -39,5 +40,14 @@ class Questions extends Model
     {
         return $this->morphMany(Comment::class, 'commentable');
     }
+
+
+    protected $casts = [
+        'you_coder_id' => 'integer',
+        'answers_count' => 'integer',
+        'status' => QuestionStatus::class,
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 
 }

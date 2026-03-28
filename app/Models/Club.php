@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ClubRole;
 use Database\Factories\ClubFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -33,4 +34,11 @@ class Club extends Model
     {
         return $this->hasMany(Chat::class);
     }
+
+    protected $casts = [
+        'creator_id' => 'integer',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'role' => ClubRole::class
+    ];
 }

@@ -28,4 +28,12 @@ class Comment extends Model
     {
         return $this->morphTo();
     }
+
+    protected $casts = [
+        'you_coder_id' => 'integer',
+        'commentable_id' => 'integer',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
+    ];
 }

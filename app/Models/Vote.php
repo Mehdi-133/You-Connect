@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\VoteType;
 use Database\Factories\VoteFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -26,4 +27,12 @@ class Vote extends Model
     {
         return $this->belongsTo(Answers::class);
     }
+
+    protected $casts = [
+        'you_coder_id' => 'integer',
+        'answer_id' => 'integer',
+        'type' => VoteType::class,
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 }

@@ -22,4 +22,11 @@ class Interest extends Model
         return $this->belongsToMany(User::class, 'interest_you_coder')
             ->withPivot('selected_at');
     }
+
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+
 }

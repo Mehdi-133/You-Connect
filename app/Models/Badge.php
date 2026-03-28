@@ -24,4 +24,10 @@ class Badge extends Model
         return $this->belongsToMany(User::class, 'badge_you_coder')
             ->withPivot('awarded_at');
     }
+
+    protected $casts = [
+        'points_required' => 'integer',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 }

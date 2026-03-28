@@ -25,4 +25,10 @@ class Like extends Model
     {
         return $this->belongsTo(Blog::class);
     }
+
+    protected $casts = [
+        'you_coder_id' => 'integer',
+        'blog_id' => 'integer',
+        'created_at' => 'datetime',
+    ];
 }

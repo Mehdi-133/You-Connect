@@ -21,4 +21,11 @@ class Reputation extends Model
     {
         return $this->belongsTo(User::class, 'you_coder_id');
     }
+
+    protected $casts = [
+        'you_coder_id' => 'integer',
+        'points' => 'integer',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 }
