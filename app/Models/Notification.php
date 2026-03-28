@@ -18,4 +18,9 @@ class Notification extends Model
         'is_read',
         'you_coder_id',
     ];
+
+    public function recipient()
+    {
+        return $this->belongsTo(User::class, 'you_coder_id');
+    }
 }

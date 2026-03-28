@@ -16,4 +16,9 @@ class Reputation extends Model
         'reason',
         'you_coder_id',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'you_coder_id');
+    }
 }

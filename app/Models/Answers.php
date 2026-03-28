@@ -18,4 +18,27 @@ class Answers extends Model
         'question_id',
         'you_coder_id',
     ];
+
+
+    public function question()
+    {
+        return $this->belongsTo(Questions::class);
+    }
+
+    public function youCoder()
+    {
+        return $this->belongsTo(User::class, 'you_coder_id');
+    }
+
+    public function votes()
+    {
+        return $this->hasMany(Vote::class);
+    }
+
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'commentable');
+    }
 }
+
+

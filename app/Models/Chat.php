@@ -17,4 +17,22 @@ class Chat extends Model
         'club_id'
     ];
 
+
+    public function club()
+    {
+        return $this->belongsTo(Club::class);
+    }
+
+    public function Engaged()
+    {
+        return $this->belongsToMany(User::class, 'chat_you_coder')
+            ->withPivot('joined_at', 'last_read_at');
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(Message::class);
+    }
+
+
 }

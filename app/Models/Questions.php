@@ -20,4 +20,24 @@ class Questions extends Model
         'you_coder_id'
     ];
 
+    public function youCoder()
+    {
+        return $this->belongsTo(User::class, 'you_coder_id');
+    }
+
+    public function answers()
+    {
+        return $this->hasMany(Answers::class);
+    }
+
+    public function tags()
+    {
+        return $this->belongsToMany(Tag::class, 'question_tag');
+    }
+
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'commentable');
+    }
+
 }

@@ -16,4 +16,14 @@ class Vote extends Model
         'you_coder_id',
         'answer_id',
     ];
+
+    public function voter()
+    {
+        return $this->belongsTo(User::class, 'you_coder_id');
+    }
+
+    public function answer()
+    {
+        return $this->belongsTo(Answers::class);
+    }
 }

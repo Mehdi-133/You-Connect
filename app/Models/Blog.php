@@ -20,4 +20,24 @@ class Blog extends Model
         'approved_at',
         'you_coder_id'
     ];
+
+
+    public function youCoder()
+    {
+        return $this->belongsTo(User::class, 'you_coder_id');
+    }
+
+    public function likes()
+    {
+        return $this->hasMany(Like::class);
+    }
+
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'commentable');
+
+    }
+
+
 }
+

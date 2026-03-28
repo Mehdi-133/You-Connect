@@ -16,4 +16,10 @@ class Interest extends Model
         'type',
         'icon',
     ];
+
+    public function youCoder()
+    {
+        return $this->belongsToMany(User::class, 'interest_you_coder')
+            ->withPivot('selected_at');
+    }
 }

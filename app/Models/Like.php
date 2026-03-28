@@ -15,4 +15,14 @@ class Like extends Model
         'you_coder_id',
         'blog_id',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'you_coder_id');
+    }
+
+    public function blog()
+    {
+        return $this->belongsTo(Blog::class);
+    }
 }

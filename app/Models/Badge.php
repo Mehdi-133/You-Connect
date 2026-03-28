@@ -18,4 +18,10 @@ class Badge extends Model
         'points_required',
         'you_coder_id'
     ];
+
+    public function youCoders()
+    {
+        return $this->belongsToMany(User::class, 'badge_you_coder')
+            ->withPivot('awarded_at');
+    }
 }

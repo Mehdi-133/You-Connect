@@ -13,7 +13,19 @@ class Comment extends Model
     protected $fillable = [
         'content',
         'you_coder_id',
-        'blog_id'
+        'blog_id',
+        'commentable_id',
+        'commentable_type',
 
     ];
+
+    public function youCoder()
+    {
+        return $this->belongsTo(User::class, 'you_coder_id');
+    }
+
+    public function commentable()
+    {
+        return $this->morphTo();
+    }
 }
