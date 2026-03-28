@@ -49,7 +49,7 @@ class User extends Authenticatable
         return $this->hasMany(Answers::class);
     }
 
-    public function vote()
+    public function votes()
     {
         return $this->hasMany(Vote::class);
     }
@@ -69,7 +69,7 @@ class User extends Authenticatable
         return $this->hasMany(Notification::class);
     }
 
-    public function reputation()
+    public function reputations()
     {
         return $this->hasMany(Reputation::class);
     }
@@ -84,31 +84,27 @@ class User extends Authenticatable
         return $this->hasMany(Message::class, 'sender_id');
     }
 
-    public function Badge()
+    public function badges()
     {
-        return $this->belongsToMany(Badge::class, 'badge_you_coder')
-            ->withPivot('awarded_at')
-            ->withTimestamps();
-
+        return $this->belongsToMany(Badge::class, 'badge_user')
+            ->withPivot('awarded_at');
     }
 
     public function interests()
     {
-        return $this->belongsToMany(Interest::class, 'interest_you_coder')
-            ->withPivot('selected_at')
-            ->withTimestamps();
-
+        return $this->belongsToMany(Interest::class, 'interest_user')
+            ->withPivot('selected_at');
     }
 
     public function clubs()
     {
-        return $this->belongsToMany(Club::class, 'club_you_coder')
+        return $this->belongsToMany(Club::class, 'club_user')
             ->withPivot('role', 'joined_at');
     }
 
-    public function chat()
+    public function chats()
     {
-        return $this->belongsToMany(Chat::class, 'chat_you_coder')
+        return $this->belongsToMany(Chat::class, 'chat_user')
             ->withPivot('joined_at', 'last_read_at');
     }
 

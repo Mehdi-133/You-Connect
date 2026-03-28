@@ -13,6 +13,13 @@ return new class extends Migration
     {
         Schema::create('blogs', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('you_coder_id')->constrained('users')->cascadeOnDelete();
+            $table->string('title');
+            $table->longText('content');
+            $table->string('slug')->unique();
+            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->unsignedInteger('like_count')->default(0);
+            $table->timestamp('approved_at')->nullable();
             $table->timestamps();
         });
     }

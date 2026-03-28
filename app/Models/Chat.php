@@ -24,9 +24,9 @@ class Chat extends Model
         return $this->belongsTo(Club::class);
     }
 
-    public function Engaged()
+    public function engaged()
     {
-        return $this->belongsToMany(User::class, 'chat_you_coder')
+        return $this->belongsToMany(User::class, 'chat_user')
             ->withPivot('joined_at', 'last_read_at');
     }
 

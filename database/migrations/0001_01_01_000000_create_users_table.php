@@ -14,12 +14,13 @@ return new class extends Migration {
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->enum('role', ['student , stuff , admin']);
-            $table->enum('class', ['dev room', 'dar hamza ']);
+            $table->enum('role', ['student', 'staff', 'admin']);
+            $table->enum('class', ['dev room', 'dar hamza']);
             $table->string('bio');
             $table->string('photo')->nullable();
-            $table->integer('reputation');
-            $table->enum('status', ['baned', 'active', 'suspended']);
+            $table->integer('reputation')->default(0);
+            $table->enum('status', ['active', 'banned', 'suspended'])->default('active');
+            $table->timestamp('last_seen')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();

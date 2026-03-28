@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\InterestType;
 use Database\Factories\InterestFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,11 +20,12 @@ class Interest extends Model
 
     public function youCoder()
     {
-        return $this->belongsToMany(User::class, 'interest_you_coder')
+        return $this->belongsToMany(User::class, 'interest_user')
             ->withPivot('selected_at');
     }
 
     protected $casts = [
+        'type'       => InterestType::class,
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

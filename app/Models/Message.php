@@ -6,18 +6,19 @@ use App\Enums\MessageType;
 use Database\Factories\MessageFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Message extends Model
 {
     /** @use HasFactory<MessageFactory> */
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'content',
         'type',
         'is_read',
         'chat_id',
-        'you_coder_id',
+        'sender_id',
     ];
 
     public function chat()
@@ -25,7 +26,7 @@ class Message extends Model
         return $this->belongsTo(Chat::class);
     }
 
-    public function YouCoder()
+    public function sender()
     {
         return $this->belongsTo(User::class, 'sender_id');
     }

@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('clubs', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('creator_id')->constrained('users')->cascadeOnDelete();
+            $table->string('name');
+            $table->string('logo')->nullable();
+            $table->text('description')->nullable();
             $table->timestamps();
         });
     }

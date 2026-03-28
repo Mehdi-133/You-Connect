@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\ClubRole;
 use Database\Factories\ClubFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,7 +15,7 @@ class Club extends Model
         'name',
         'logo',
         'description',
-        'you_coder_id',
+        'creator_id'
     ];
 
     public function youCoder()
@@ -26,7 +25,7 @@ class Club extends Model
 
     public function members()
     {
-        return $this->belongsToMany(User::class, 'club_you_coder')
+        return $this->belongsToMany(User::class, 'club_user')
             ->withPivot('role', 'joined_at');
     }
 
@@ -39,6 +38,5 @@ class Club extends Model
         'creator_id' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
-        'role' => ClubRole::class
     ];
 }

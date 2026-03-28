@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -13,6 +12,9 @@ return new class extends Migration
     {
         Schema::create('chats', function (Blueprint $table) {
             $table->id();
+            $table->string('name')->nullable();
+            $table->enum('type', ['private', 'groupe', 'club', 'ai']);
+            $table->foreignId('club_id')->nullable()->constrained('clubs')->nullOnDelete();
             $table->timestamps();
         });
     }

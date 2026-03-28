@@ -10,12 +10,11 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('likes', function (Blueprint $table) {
-            $table->id();
+        Schema::create('interest_user', function (Blueprint $table) {
             $table->foreignId('you_coder_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('blog_id')->constrained('blogs')->cascadeOnDelete();
-            $table->primary(['you_coder_id', 'blog_id']);
-            $table->timestamps();
+            $table->foreignId('interest_id')->constrained('interests')->cascadeOnDelete();
+            $table->timestamp('selected_at')->useCurrent();
+            $table->primary(['you_coder_id', 'interest_id']);
         });
     }
 
@@ -24,6 +23,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('likes');
+        Schema::dropIfExists('interest_user');
     }
 };

@@ -16,12 +16,11 @@ class Badge extends Model
         'description',
         'icon',
         'points_required',
-        'you_coder_id'
     ];
 
     public function youCoders()
     {
-        return $this->belongsToMany(User::class, 'badge_you_coder')
+        return $this->belongsToMany(User::class, 'badge_user')
             ->withPivot('awarded_at');
     }
 

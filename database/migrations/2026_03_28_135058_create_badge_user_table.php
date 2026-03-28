@@ -10,12 +10,11 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('likes', function (Blueprint $table) {
-            $table->id();
+        Schema::create('badge_user', function (Blueprint $table) {
             $table->foreignId('you_coder_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('blog_id')->constrained('blogs')->cascadeOnDelete();
-            $table->primary(['you_coder_id', 'blog_id']);
-            $table->timestamps();
+            $table->foreignId('badge_id')->constrained('badges')->cascadeOnDelete();
+            $table->timestamp('awarded_at')->useCurrent();
+            $table->primary(['you_coder_id', 'badge_id']);
         });
     }
 
@@ -24,6 +23,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('likes');
+        Schema::dropIfExists('badge_user');
     }
 };
