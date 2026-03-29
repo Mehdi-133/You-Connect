@@ -14,6 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->api(prepend: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            'role'         => \App\Http\Middleware\EnsureRole::class,
+            'check.status' => \App\Http\Middleware\CheckStatus::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
