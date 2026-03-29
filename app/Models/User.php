@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -109,6 +110,41 @@ class User extends Authenticatable
     }
 
 
+    //helpers for roles
+
+    public function isAdmin(): bool
+    {
+        return $this->role === UserRole::Admin;
+    }
+
+    public function isFormateur(): bool
+    {
+        return $this->role === UserRole::Formateur;
+    }
+
+    public function isBdeMembre(): bool
+    {
+        return $this->role === UserRole::BdeMembre;
+    }
+
+    public function isStudent(): bool
+    {
+        return $this->role->isAtLeast(UserRole::Student);
+    }
+
+    public function isVisitor(): bool
+    {
+        return $this->role === UserRole::Visitor;
+    }
+
+    //status hellper for blocking suspended user
+
+    public function canAccess(): bool
+    {
+        return $this->status->canAccess();
+    }
+
+
     /**
      * The attributes that should be hidden for serialization.
      *
@@ -133,6 +169,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'reputation' => 'integer',
             'status' => YouCoderStatus::class,
+            'role' => UserRole::class,
             'last_seen' => 'datetime',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',

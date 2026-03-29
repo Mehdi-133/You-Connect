@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="iT21mFMZ72WH4Lnr4s-4" name="Page-1">
-        <mxGraphModel dx="1245" dy="469" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+        <mxGraphModel dx="1443" dy="450" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -188,12 +188,6 @@
                 </mxCell>
                 <mxCell id="69" value="+ method(type): type" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="66" vertex="1">
                     <mxGeometry y="108" width="160" height="46" as="geometry"/>
-                </mxCell>
-                <mxCell id="100" value="enum &amp;lt;type&amp;gt;" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=29;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" parent="1" vertex="1">
-                    <mxGeometry x="860" y="1160" width="140" height="80" as="geometry"/>
-                </mxCell>
-                <mxCell id="101" value="text&lt;div&gt;file&lt;/div&gt;&lt;div&gt;image&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" parent="100" vertex="1">
-                    <mxGeometry y="29" width="140" height="51" as="geometry"/>
                 </mxCell>
                 <mxCell id="141" value="" style="endArrow=diamondThin;endFill=1;endSize=24;html=1;entryX=0.682;entryY=-0.004;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" target="2" edge="1">
                     <mxGeometry width="160" relative="1" as="geometry">
