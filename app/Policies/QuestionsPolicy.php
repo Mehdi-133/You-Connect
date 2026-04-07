@@ -13,7 +13,7 @@ class QuestionsPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,7 +21,7 @@ class QuestionsPolicy
      */
     public function view(User $user, Questions $questions): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -29,7 +29,7 @@ class QuestionsPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -37,15 +37,22 @@ class QuestionsPolicy
      */
     public function update(User $user, Questions $questions): bool
     {
-        return false;
+        return $user->id === $questions->you_coder_id;
     }
+
 
     /**
      * Determine whether the user can delete the model.
      */
     public function delete(User $user, Questions $questions): bool
     {
-        return false;
+        return $user->id === $questions->you_coder_id;
+    }
+
+    public function suspend( User $user , Questions $questions): bool
+    {
+
+        return  $user->isAdmin();
     }
 
     /**
@@ -53,7 +60,7 @@ class QuestionsPolicy
      */
     public function restore(User $user, Questions $questions): bool
     {
-        return false;
+        return  $user->isAdmin();
     }
 
     /**

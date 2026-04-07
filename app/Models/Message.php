@@ -13,6 +13,7 @@ class Message extends Model
     /** @use HasFactory<MessageFactory> */
     use HasFactory, SoftDeletes;
 
+    public mixed $sender_id;
     protected $fillable = [
         'content',
         'type',

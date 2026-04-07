@@ -11,6 +11,11 @@ class Answers extends Model
     /** @use HasFactory<AnswersFactory> */
     use HasFactory;
 
+    public mixed $you_coder_id;
+    public mixed $questions;
+
+
+
     protected $fillable = [
         'content',
         'is_accepted',

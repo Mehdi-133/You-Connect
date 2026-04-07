@@ -11,6 +11,7 @@ class Badge extends Model
     /** @use HasFactory<BadgeFactory> */
     use HasFactory;
 
+    public mixed $you_coder_id;
     protected $fillable = [
         'name',
         'description',

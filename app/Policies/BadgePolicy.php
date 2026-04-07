@@ -13,7 +13,7 @@ class BadgePolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true ;
     }
 
     /**
@@ -21,7 +21,7 @@ class BadgePolicy
      */
     public function view(User $user, Badge $badge): bool
     {
-        return false;
+        return true ;
     }
 
     /**
@@ -29,7 +29,7 @@ class BadgePolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     /**
@@ -37,7 +37,7 @@ class BadgePolicy
      */
     public function update(User $user, Badge $badge): bool
     {
-        return false;
+        return $user->isAdmin() || $user->id === $badge->you_coder_id;
     }
 
     /**
@@ -45,7 +45,7 @@ class BadgePolicy
      */
     public function delete(User $user, Badge $badge): bool
     {
-        return false;
+        return $user->isAdmin() || $user->id === $badge->you_coder_id;
     }
 
     /**

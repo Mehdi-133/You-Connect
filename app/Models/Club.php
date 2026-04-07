@@ -11,6 +11,7 @@ class Club extends Model
     /** @use HasFactory<ClubFactory> */
     use HasFactory;
 
+    public mixed $you_coder_id;
     protected $fillable = [
         'name',
         'logo',

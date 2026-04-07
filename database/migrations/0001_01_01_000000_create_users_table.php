@@ -15,8 +15,8 @@ return new class extends Migration {
             $table->string('name');
             $table->string('email')->unique();
             $table->enum('role', [ 'visitor' ,'student', 'bde_member', 'stuff', 'admin'])->default('visitor ');
-            $table->enum('class', ['dev room', 'dar hamza']);
-            $table->string('bio');
+            $table->enum('class', ['dev room', 'dar hamza'])->nullable();
+            $table->string('bio')->nullable();
             $table->string('photo')->nullable();
             $table->integer('reputation')->default(0);
             $table->enum('status', ['active', 'banned', 'suspended'])->default('active');

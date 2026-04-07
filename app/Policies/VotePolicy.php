@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Answers;
 use App\Models\User;
 use App\Models\Vote;
 use Illuminate\Auth\Access\Response;
@@ -13,7 +14,7 @@ class VotePolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,15 +22,15 @@ class VotePolicy
      */
     public function view(User $user, Vote $vote): bool
     {
-        return false;
+        return true;
     }
 
     /**
      * Determine whether the user can create models.
      */
-    public function create(User $user): bool
+    public function create(User $user, Answers $answers): bool
     {
-        return false;
+        return $user->id !== $answers->you_coder_id;
     }
 
     /**
@@ -45,7 +46,7 @@ class VotePolicy
      */
     public function delete(User $user, Vote $vote): bool
     {
-        return false;
+        return $user->id === $vote->you_coder_id ;
     }
 
     /**

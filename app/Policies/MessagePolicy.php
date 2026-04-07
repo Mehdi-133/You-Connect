@@ -21,15 +21,18 @@ class MessagePolicy
      */
     public function view(User $user, Message $message): bool
     {
-        return false;
+        return $message
+            ->chat()
+            ->where('sender_id', $user->id)
+            ->exists();
     }
 
     /**
      * Determine whether the user can create models.
      */
-    public function create(User $user): bool
+    public function create(User $user, Message $message): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -37,7 +40,7 @@ class MessagePolicy
      */
     public function update(User $user, Message $message): bool
     {
-        return false;
+        return $user->id === $message->sender_id;
     }
 
     /**
@@ -45,7 +48,8 @@ class MessagePolicy
      */
     public function delete(User $user, Message $message): bool
     {
-        return false;
+        return $user->id === $message->sender_id
+            || $user->isAdmin();
     }
 
     /**

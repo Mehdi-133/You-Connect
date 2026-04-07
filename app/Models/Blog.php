@@ -12,6 +12,8 @@ class Blog extends Model
     /** @use HasFactory<BlogFactory> */
     use HasFactory;
 
+
+    public mixed $you_coder_id;
     protected $fillable = [
         'title',
         'content',

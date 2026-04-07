@@ -13,7 +13,7 @@ class InterestPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,7 +21,7 @@ class InterestPolicy
      */
     public function view(User $user, Interest $interest): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -29,7 +29,7 @@ class InterestPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     /**
@@ -37,7 +37,8 @@ class InterestPolicy
      */
     public function update(User $user, Interest $interest): bool
     {
-        return false;
+        return $user->isAdmin() || $user->id === $interest->you_coder_id;
+
     }
 
     /**
@@ -45,7 +46,8 @@ class InterestPolicy
      */
     public function delete(User $user, Interest $interest): bool
     {
-        return false;
+        return $user->isAdmin() || $user->id === $interest->you_coder_id ;
+
     }
 
     /**

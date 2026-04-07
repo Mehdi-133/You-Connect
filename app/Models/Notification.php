@@ -12,6 +12,7 @@ class Notification extends Model
     /** @use HasFactory<NotificationFactory> */
     use HasFactory;
 
+    public mixed $you_coder_id;
     protected $fillable = [
         'title',
         'type',

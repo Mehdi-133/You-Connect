@@ -21,7 +21,16 @@ class ChatPolicy
      */
     public function view(User $user, Chat $chat): bool
     {
-        return false;
+        return $chat->engaged()
+            ->where('you_coder_id', $user->id)
+            ->exists();
+    }
+
+    public function sendMessage(User $user, Chat $chat): bool
+    {
+        return $chat->engaged()
+            ->where('you_coder_id', $user->id)
+            ->exists();
     }
 
     /**
@@ -45,7 +54,7 @@ class ChatPolicy
      */
     public function delete(User $user, Chat $chat): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     /**

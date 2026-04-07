@@ -11,6 +11,7 @@ class Like extends Model
     /** @use HasFactory<LikeFactory> */
     use HasFactory;
 
+    public mixed $you_coder_id;
     protected $fillable = [
         'you_coder_id',
         'blog_id',

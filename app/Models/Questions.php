@@ -33,7 +33,7 @@ class Questions extends Model
 
     public function tags()
     {
-        return $this->belongsToMany(Tag::class, 'question_tag');
+        return $this->belongsToMany(Tag::class, 'question_tag' , 'question_id' , 'tag_id');
     }
 
     public function comments()

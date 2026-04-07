@@ -21,7 +21,8 @@ class ReputationPolicy
      */
     public function view(User $user, Reputation $reputation): bool
     {
-        return false;
+        return $user->id === $reputation->you_coder_id
+            || $user->isAdmin();
     }
 
     /**

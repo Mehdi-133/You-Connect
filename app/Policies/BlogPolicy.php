@@ -13,7 +13,7 @@ class BlogPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,7 +21,7 @@ class BlogPolicy
      */
     public function view(User $user, Blog $blog): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -29,7 +29,7 @@ class BlogPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -37,7 +37,7 @@ class BlogPolicy
      */
     public function update(User $user, Blog $blog): bool
     {
-        return false;
+        return $user->id === $blog->you_coder_id;
     }
 
     /**
@@ -45,7 +45,12 @@ class BlogPolicy
      */
     public function delete(User $user, Blog $blog): bool
     {
-        return false;
+        return $user->id === $blog->you_coder_id;
+    }
+
+    public function suspend(User $user , Blog $blog): bool
+    {
+        return $user->isAdmin();
     }
 
     /**
@@ -53,7 +58,18 @@ class BlogPolicy
      */
     public function restore(User $user, Blog $blog): bool
     {
-        return false;
+        return $user->isAdmin();
+    }
+
+    public function approve(User $user, Blog $blog): bool
+    {
+        return $user->isFormateur() || $user->isAdmin();
+
+    }
+
+    public function highlight(User $user, Blog $blog): bool
+    {
+        return $user->isFormateur() || $user->isAdmin();
     }
 
     /**

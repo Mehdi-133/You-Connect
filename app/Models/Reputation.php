@@ -11,6 +11,7 @@ class Reputation extends Model
     /** @use HasFactory<ReputationFactory> */
     use HasFactory;
 
+    public mixed $you_coder_id;
     protected $fillable = [
         'points',
         'reason',

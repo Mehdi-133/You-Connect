@@ -12,6 +12,7 @@ class Interest extends Model
     /** @use HasFactory<InterestFactory> */
     use HasFactory;
 
+    public mixed $you_coder_id;
     protected $fillable = [
         'name',
         'type',

@@ -11,6 +11,7 @@ class Comment extends Model
     /** @use HasFactory<CommentFactory> */
     use HasFactory;
 
+    public mixed $you_coder_id;
     protected $fillable = [
         'content',
         'you_coder_id',

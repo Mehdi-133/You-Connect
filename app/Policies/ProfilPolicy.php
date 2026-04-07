@@ -2,11 +2,11 @@
 
 namespace App\Policies;
 
-use App\Models\Answers;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
+use function Laravel\Prompts\error;
 
-class AnswersPolicy
+class ProfilPolicy
 {
     /**
      * Determine whether the user can view any models.
@@ -19,7 +19,7 @@ class AnswersPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Answers $answers): bool
+    public function view(User $user, user $model): bool
     {
         return true;
     }
@@ -35,20 +35,20 @@ class AnswersPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Answers $answers): bool
+    public function update(User $user, user $model): bool
     {
-        return $user->id === $answers->you_coder_id;
+        return $user->id === $model->you_coder_id;
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Answers $answers): bool
+    public function delete(User $user, user $model): bool
     {
-        return $user->id === $answers->you_coder_id;
+        return $user->id === $model->you_coder_id;
     }
 
-    public function suspend(User $user, Answers $answers): bool
+    public function banned(User $user, user $model): bool
     {
         return $user->isAdmin();
     }
@@ -56,26 +56,21 @@ class AnswersPolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, Answers $answers): bool
+    public function restore(User $user, user $model): bool
     {
         return $user->isAdmin();
     }
 
-    public function highlight(User $user, Answers $answers): bool
+    public function changeRole(User $user): bool
     {
-        return $user->isFormateur() || $user->isAdmin();
+        return $user->isAdmin();
     }
 
-    //here we gonnna make only the user whos ask a question that he can accept a question or formateur too
-    public function accept(User $user, Answers $answers): bool
-    {
-        return  $user->id === $answers->questions->you_coder_id || $user->isFormateur();
-    }
 
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, Answers $answers): bool
+    public function forceDelete(User $user, user $model): bool
     {
         return false;
     }

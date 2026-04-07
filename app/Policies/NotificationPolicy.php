@@ -21,7 +21,7 @@ class NotificationPolicy
      */
     public function view(User $user, Notification $notification): bool
     {
-        return false;
+        return $user->id === $notification->you_coder_id;
     }
 
     /**
@@ -37,7 +37,7 @@ class NotificationPolicy
      */
     public function update(User $user, Notification $notification): bool
     {
-        return false;
+        return $user->id === $notification->you_coder_id;
     }
 
     /**
@@ -45,7 +45,9 @@ class NotificationPolicy
      */
     public function delete(User $user, Notification $notification): bool
     {
-        return false;
+        return $user->id === $notification->you_coder_id
+            || $user->isAdmin();
+
     }
 
     /**
