@@ -24,6 +24,17 @@ class DatabaseSeeder extends Seeder
             'bio'      => 'Administrator account',
         ]);
 
+        User::create([
+            'name'     => 'Formateur',
+            'email'    => 'formateur@youconnect.com',
+            'password' => Hash::make('password'),
+            'role'     => 'formateur',
+            'status'   => 'active',
+            'class'    => 'dev room',
+            'bio'      => 'Formateur account',
+        ]);
+
+
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',

@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->enum('role', [ 'visitor' ,'student', 'bde_member', 'stuff', 'admin'])->default('visitor ');
+            $table->enum('role', ['visitor', 'student', 'bde_membre', 'formateur', 'admin'])->default('visitor');
             $table->enum('class', ['dev room', 'dar hamza'])->nullable();
             $table->string('bio')->nullable();
             $table->string('photo')->nullable();

@@ -11,8 +11,7 @@ class Answers extends Model
     /** @use HasFactory<AnswersFactory> */
     use HasFactory;
 
-    public mixed $you_coder_id;
-    public mixed $questions;
+
 
 
 
@@ -27,7 +26,7 @@ class Answers extends Model
 
     public function question()
     {
-        return $this->belongsTo(Questions::class);
+        return $this->belongsTo(Questions::class );
     }
 
     public function youCoder()

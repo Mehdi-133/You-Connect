@@ -69,7 +69,7 @@ class AnswersPolicy
     //here we gonnna make only the user whos ask a question that he can accept a question or formateur too
     public function accept(User $user, Answers $answers): bool
     {
-        return  $user->id === $answers->questions->you_coder_id || $user->isFormateur();
+        return  $user->id === $answers->question->you_coder_id || $user->isFormateur();
     }
 
     /**

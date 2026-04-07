@@ -11,7 +11,7 @@ class StoreAnswersRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,8 @@ class StoreAnswersRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'content' => 'required|string',
+            'question_id' => 'required|integer|exists:questions,id',
         ];
     }
 }
