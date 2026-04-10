@@ -89,7 +89,9 @@ class AnswersController extends Controller
     public function highlight(Answers $answer)
     {
         $this->authorize('highlight', $answer);
-        return response()->json(['message' => 'Answer highlighted']);
+        $answer->update(['is_highlighted' => !$answer->is_highlighted]);
+        $status = $answer->is_highlighted ? 'highlighted' : 'unhighlighted';
+        return response()->json(['message' => "Answer {$status}"]);
     }
 
     public function accept(Answers $answer)

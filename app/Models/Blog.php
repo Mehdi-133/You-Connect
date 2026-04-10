@@ -13,13 +13,13 @@ class Blog extends Model
     use HasFactory;
 
 
-    public mixed $you_coder_id;
     protected $fillable = [
         'title',
         'content',
         'slug',
         'status',
         'like_count',
+        'is_highlighted',
         'approved_at',
         'you_coder_id'
     ];
@@ -44,8 +44,9 @@ class Blog extends Model
 
     protected $casts = [
         'you_coder_id' => 'integer',
-        'like_count' => 'integer',
-        'status' => BlogStatus::class,
+        'like_count'     => 'integer',
+        'is_highlighted' => 'boolean',
+        'status'         => BlogStatus::class,
         'approved_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',

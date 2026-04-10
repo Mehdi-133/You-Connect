@@ -18,6 +18,7 @@ class Answers extends Model
     protected $fillable = [
         'content',
         'is_accepted',
+        'is_highlighted',
         'vote_count',
         'question_id',
         'you_coder_id',
@@ -47,8 +48,9 @@ class Answers extends Model
     protected $casts = [
         'question_id' => 'integer',
         'you_coder_id' => 'integer',
-        'is_accepted' => 'boolean',
-        'vote_count' => 'integer',
+        'is_accepted'    => 'boolean',
+        'is_highlighted' => 'boolean',
+        'vote_count'     => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

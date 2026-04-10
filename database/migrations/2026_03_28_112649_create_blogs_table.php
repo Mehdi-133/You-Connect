@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->unsignedInteger('like_count')->default(0);
+            $table->boolean('is_highlighted')->default(false);
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();
         });

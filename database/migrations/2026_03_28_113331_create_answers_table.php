@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->foreignId('you_coder_id')->constrained('users')->cascadeOnDelete();
             $table->longText('content');
             $table->boolean('is_accepted')->default(false);
+            $table->boolean('is_highlighted')->default(false);
             $table->unsignedInteger('vote_count')->default(0);
             $table->timestamps();
         });

@@ -11,8 +11,9 @@ class StoreBlogRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true ;
     }
+
 
     /**
      * Get the validation rules that apply to the request.
@@ -22,7 +23,8 @@ class StoreBlogRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'title'   => 'sometimes|string|max:255',
+            'content' => 'sometimes|string'
         ];
     }
 }
