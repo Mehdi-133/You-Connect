@@ -6,9 +6,6 @@ use App\Models\Comment;
 use App\Http\Requests\StoreCommentRequest;
 use App\Http\Requests\UpdateCommentRequest;
 use App\Enums\NotificationType;
-use App\Models\Answers;
-use App\Models\Blog;
-use App\Models\Questions;
 use App\Services\NotificationService;
 
 class CommentController extends Controller

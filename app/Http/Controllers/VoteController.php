@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\NotificationType;
+use App\Enums\VoteType;
+use App\Http\Requests\StoreVoteRequest;
 use App\Models\Answers;
 use App\Models\Vote;
-use App\Http\Requests\StoreVoteRequest;
+use App\Services\NotificationService;
 
 class VoteController extends Controller
 {
-    public function store(StoreVoteRequest $request)
+    public function store(StoreVoteRequest $request, NotificationService $notificationService)
     {
         $answer = Answers::findOrFail($request->input('answer_id'));
+        $requestedType = VoteType::from($request->input('type'));
 
         $this->authorize('create', [Vote::class, $answer]);
 
@@ -19,12 +23,32 @@ class VoteController extends Controller
             ->first();
 
         if ($existing) {
-            if ($existing->type->value === $request->input('type')) {
+            if ($existing->type === $requestedType) {
                 $existing->delete();
                 $answer->decrement('vote_count');
                 return response()->json(['message' => 'Vote removed']);
             } else {
-                $existing->update(['type' => $request->input('type')]);
+                $existing->update(['type' => $requestedType]);
+
+                if ($requestedType === VoteType::UpVote) {
+                    $recipient = $answer->youCoder;
+
+                    if ($recipient && $recipient->id !== $request->user()->id) {
+                        $notificationService->send(
+                            recipient: $recipient,
+                            type: NotificationType::Vote,
+                            title: 'New upvote on your answer',
+                            content: "{$request->user()->name} upvoted your answer.",
+                            actor: $request->user(),
+                            data: [
+                                'answer_id' => $answer->id,
+                                'question_id' => $answer->question_id,
+                                'action' => 'upvoted',
+                            ],
+                        );
+                    }
+                }
+
                 return response()->json(['message' => 'Vote switched', 'vote' => $existing]);
             }
         }
@@ -32,10 +56,29 @@ class VoteController extends Controller
         $vote = Vote::create([
             'you_coder_id' => $request->user()->id,
             'answer_id' => $answer->id,
-            'type' => $request->input('type'),
+            'type' => $requestedType,
         ]);
 
         $answer->increment('vote_count');
+
+        if ($requestedType === VoteType::UpVote) {
+            $recipient = $answer->youCoder;
+
+            if ($recipient && $recipient->id !== $request->user()->id) {
+                $notificationService->send(
+                    recipient: $recipient,
+                    type: NotificationType::Vote,
+                    title: 'New upvote on your answer',
+                    content: "{$request->user()->name} upvoted your answer.",
+                    actor: $request->user(),
+                    data: [
+                        'answer_id' => $answer->id,
+                        'question_id' => $answer->question_id,
+                        'action' => 'upvoted',
+                    ],
+                );
+            }
+        }
 
         return response()->json($vote, 201);
     }

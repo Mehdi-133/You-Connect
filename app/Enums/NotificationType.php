@@ -10,4 +10,6 @@ enum NotificationType: string
     case Badge = 'badge';
     case Mention = 'mention';
     case Comment = 'comment';
+    case Like = 'like';
+    case Vote = 'vote';
 }

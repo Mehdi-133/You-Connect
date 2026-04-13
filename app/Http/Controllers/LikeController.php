@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\NotificationType;
+use App\Http\Requests\StoreLikeRequest;
 use App\Models\Blog;
 use App\Models\Like;
-use App\Http\Requests\StoreLikeRequest;
+use App\Services\NotificationService;
 
 class LikeController extends Controller
 {
-    public function store(StoreLikeRequest $request)
+    public function store(StoreLikeRequest $request, NotificationService $notificationService)
     {
         $blog = Blog::findOrFail($request->input('blog_id'));
 
@@ -32,6 +34,22 @@ class LikeController extends Controller
         ]);
 
         $blog->increment('like_count');
+
+        $recipient = $blog->youCoder;
+
+        if ($recipient && $recipient->id !== $request->user()->id) {
+            $notificationService->send(
+                recipient: $recipient,
+                type: NotificationType::Like,
+                title: 'New like on your blog',
+                content: "{$request->user()->name} liked your blog: {$blog->title}",
+                actor: $request->user(),
+                data: [
+                    'blog_id' => $blog->id,
+                    'action' => 'liked',
+                ],
+            );
+        }
 
         return response()->json(['message' => 'Blog liked']);
     }
