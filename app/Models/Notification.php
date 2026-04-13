@@ -9,10 +9,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Notification extends Model
 {
-    /** @use HasFactory<NotificationFactory> */
     use HasFactory;
 
-    public mixed $you_coder_id;
     protected $fillable = [
         'title',
         'type',
@@ -28,9 +26,9 @@ class Notification extends Model
 
     protected $casts = [
         'you_coder_id' => 'integer',
-        'is_read' => 'boolean',
-        'type' => NotificationType::class,
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'is_read'      => 'boolean',
+        'type'         => NotificationType::class,
+        'created_at'   => 'datetime',
+        'updated_at'   => 'datetime',
     ];
 }

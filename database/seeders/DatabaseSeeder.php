@@ -34,6 +34,16 @@ class DatabaseSeeder extends Seeder
             'bio'      => 'Formateur account',
         ]);
 
+        User::create([
+            'name'     => 'BDE Membre',
+            'email'    => 'bde@youconnect.com',
+            'password' => Hash::make('password'),
+            'role'     => 'bde_membre',
+            'status'   => 'active',
+            'class'    => 'dev room',
+            'bio'      => 'BDE Membre account',
+        ]);
+
 
         User::factory()->create([
             'name' => 'Test User',

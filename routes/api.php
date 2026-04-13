@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\IventsController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AnswersController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlogController;
@@ -64,5 +66,19 @@ Route::middleware('auth:sanctum', 'check.status')->group(function () {
     Route::patch('users/{user}/ban', [ProfilController::class, 'banned']);
     Route::patch('users/{user}/restore', [ProfilController::class, 'restore']);
     Route::patch('users/{user}/change-role', [ProfilController::class, 'changeRole']);
+
+    Route::apiResource('events', IventsController::class)->parameters(['events' => 'ivent']);
+    Route::patch('events/{ivent}/cancel', [IventsController::class, 'cancel']);
+    Route::patch('events/{ivent}/suspend', [IventsController::class, 'suspend']);
+    Route::patch('events/{ivent}/restore', [IventsController::class, 'restore']);
+    Route::post('events/{ivent}/join', [IventsController::class, 'join']);
+    Route::delete('events/{ivent}/leave', [IventsController::class, 'leave']);
+
+    Route::get('notifications', [NotificationController::class, 'index']);
+    Route::get('notifications/{notification}', [NotificationController::class, 'show']);
+    Route::patch('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+    Route::patch('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::delete('notifications/{notification}', [NotificationController::class, 'destroy']);
+    Route::delete('notifications', [NotificationController::class, 'destroyAll']);
 
 });

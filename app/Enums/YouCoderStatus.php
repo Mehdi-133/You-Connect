@@ -63,6 +63,15 @@ enum NotificationType: string
     case Mention = 'mention';
 }
 
+enum IventStatus: string
+{
+    case Upcoming  = 'upcoming';
+    case Ongoing   = 'ongoing';
+    case Finished  = 'finished';
+    case Cancelled = 'cancelled';
+    case Suspended = 'suspended';
+}
+
 enum InterestType: string
 {
     case WebDevelopment       = 'web_development';
