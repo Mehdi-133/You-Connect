@@ -4,6 +4,8 @@ use App\Http\Controllers\AnswersController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\LikeController;
+use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\QuestionsController;
 use App\Http\Controllers\VoteController;
 use Illuminate\Http\Request;
@@ -41,5 +43,18 @@ Route::middleware('auth:sanctum', 'check.status')->group(function () {
 
     Route::post('votes', [VoteController::class, 'store']);
     Route::delete('votes/{vote}', [VoteController::class, 'destroy']);
+
+
+    Route::post('likes', [LikeController::class, 'store']);
+
+
+
+    Route::get('users', [ProfilController::class, 'index']);
+    Route::get('users/{user}', [ProfilController::class, 'show']);
+    Route::put('users/{user}', [ProfilController::class, 'update']);
+    Route::delete('users/{user}', [ProfilController::class, 'destroy']);
+    Route::patch('users/{user}/ban', [ProfilController::class, 'banned']);
+    Route::patch('users/{user}/restore', [ProfilController::class, 'restore']);
+    Route::patch('users/{user}/change-role', [ProfilController::class, 'changeRole']);
 
 });

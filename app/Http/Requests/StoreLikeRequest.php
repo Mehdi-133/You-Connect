@@ -11,7 +11,7 @@ class StoreLikeRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,7 @@ class StoreLikeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'blog_id' => 'required|integer|exists:blogs,id',
         ];
     }
 }

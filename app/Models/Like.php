@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Like extends Model
 {
-    /** @use HasFactory<LikeFactory> */
     use HasFactory;
 
-    public mixed $you_coder_id;
+    public $incrementing = false;
+    protected $primaryKey = null;
+
     protected $fillable = [
         'you_coder_id',
         'blog_id',
@@ -29,7 +30,7 @@ class Like extends Model
 
     protected $casts = [
         'you_coder_id' => 'integer',
-        'blog_id' => 'integer',
-        'created_at' => 'datetime',
+        'blog_id'      => 'integer',
+        'created_at'   => 'datetime',
     ];
 }

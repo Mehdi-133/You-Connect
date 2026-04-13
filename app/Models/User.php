@@ -88,25 +88,25 @@ class User extends Authenticatable
 
     public function badges()
     {
-        return $this->belongsToMany(Badge::class, 'badge_user')
+        return $this->belongsToMany(Badge::class, 'badge_user', 'you_coder_id', 'badge_id')
             ->withPivot('awarded_at');
     }
 
     public function interests()
     {
-        return $this->belongsToMany(Interest::class, 'interest_user')
+        return $this->belongsToMany(Interest::class, 'interest_user', 'you_coder_id', 'interest_id')
             ->withPivot('selected_at');
     }
 
     public function clubs()
     {
-        return $this->belongsToMany(Club::class, 'club_user')
+        return $this->belongsToMany(Club::class, 'club_user', 'you_coder_id', 'club_id')
             ->withPivot('role', 'joined_at');
     }
 
     public function chats()
     {
-        return $this->belongsToMany(Chat::class, 'chat_user')
+        return $this->belongsToMany(Chat::class, 'chat_user', 'you_coder_id', 'chat_id')
             ->withPivot('joined_at', 'last_read_at');
     }
 
