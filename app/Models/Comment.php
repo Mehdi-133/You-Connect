@@ -5,13 +5,13 @@ namespace App\Models;
 use Database\Factories\CommentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Comment extends Model
 {
     /** @use HasFactory<CommentFactory> */
-    use HasFactory;
+    use HasFactory ,  SoftDeletes;
 
-    public mixed $you_coder_id;
     protected $fillable = [
         'content',
         'you_coder_id',

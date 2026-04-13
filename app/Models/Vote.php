@@ -12,7 +12,6 @@ class Vote extends Model
     /** @use HasFactory<VoteFactory> */
     use HasFactory;
 
-    public mixed $you_coder_id;
     protected $fillable = [
         'type',
         'you_coder_id',

@@ -3,7 +3,9 @@
 use App\Http\Controllers\AnswersController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\QuestionsController;
+use App\Http\Controllers\VoteController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -30,5 +32,14 @@ Route::middleware('auth:sanctum', 'check.status')->group(function () {
     Route::patch('blogs/{blog}/suspend', [BlogController::class, 'suspend']);
     Route::patch('blogs/{blog}/restore', [BlogController::class, 'restore']);
     Route::patch('blogs/{blog}/highlight', [BlogController::class, 'highlight']);
+
+
+    Route::apiResource('comments', CommentController::class)->except(['index']);
+    Route::patch('comments/{comment}/suspend', [CommentController::class, 'suspend']);
+    Route::patch('comments/{comment}/restore', [CommentController::class, 'restore']);
+
+
+    Route::post('votes', [VoteController::class, 'store']);
+    Route::delete('votes/{vote}', [VoteController::class, 'destroy']);
 
 });

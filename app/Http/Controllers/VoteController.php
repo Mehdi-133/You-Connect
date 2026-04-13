@@ -2,65 +2,49 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Answers;
 use App\Models\Vote;
 use App\Http\Requests\StoreVoteRequest;
-use App\Http\Requests\UpdateVoteRequest;
 
 class VoteController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(StoreVoteRequest $request)
     {
-        //
+        $answer = Answers::findOrFail($request->input('answer_id'));
+
+        $this->authorize('create', [Vote::class, $answer]);
+
+        $existing = Vote::where('you_coder_id', $request->user()->id)
+            ->where('answer_id', $answer->id)
+            ->first();
+
+        if ($existing) {
+            if ($existing->type->value === $request->input('type')) {
+                $existing->delete();
+                $answer->decrement('vote_count');
+                return response()->json(['message' => 'Vote removed']);
+            } else {
+                $existing->update(['type' => $request->input('type')]);
+                return response()->json(['message' => 'Vote switched', 'vote' => $existing]);
+            }
+        }
+
+        $vote = Vote::create([
+            'you_coder_id' => $request->user()->id,
+            'answer_id' => $answer->id,
+            'type' => $request->input('type'),
+        ]);
+
+        $answer->increment('vote_count');
+
+        return response()->json($vote, 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Vote $vote)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Vote $vote)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateVoteRequest $request, Vote $vote)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Vote $vote)
     {
-        //
+        $this->authorize('delete', $vote);
+        $vote->delete();
+        $vote->answer->decrement('vote_count');
+        return response()->json(['message' => 'Vote removed']);
     }
 }
