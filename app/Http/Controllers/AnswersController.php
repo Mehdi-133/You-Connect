@@ -6,13 +6,15 @@ use App\Models\Answers;
 use App\Http\Requests\StoreAnswersRequest;
 use App\Http\Requests\UpdateAnswersRequest;
 use App\Models\Questions;
+use App\Enums\NotificationType;
+use App\Services\NotificationService;
 
 class AnswersController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(Questions $question)
+    public function index(Questions $question, NotificationService $notificationService)
     {
         $this->authorize('viewAny', Answers::class);
         return $question->answers()->with('youCoder:id,name,photo')->latest()->get();
@@ -29,15 +31,34 @@ class AnswersController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreAnswersRequest $request)
+    public function store(StoreAnswersRequest $request, NotificationService $notificationService)
     {
         $this->authorize('create', Answers::class);
+
+        $question = Questions::findOrFail($request->input('question_id'));
 
         $answer = Answers::create([
             'content' => $request->input('content'),
             'question_id' => $request->input('question_id'),
             'you_coder_id' => $request->user()->id,
         ]);
+
+        $recipient = $question->youCoder;
+
+        if ($recipient && $recipient->id !== $request->user()->id) {
+            $notificationService->send(
+                recipient: $recipient,
+                type: NotificationType::Answer,
+                title: 'New answer to your question',
+                content: "{$request->user()->name} answered your question: {$question->title}",
+                actor: $request->user(),
+                data: [
+                    'question_id' => $question->id,
+                    'answer_id' => $answer->id,
+                    'action' => 'created',
+                ],
+            );
+        }
 
         return response()->json($answer->load('youCoder:id,name,photo'), 201);
     }

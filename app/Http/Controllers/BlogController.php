@@ -6,6 +6,10 @@ use App\Models\Blog;
 use App\Http\Requests\StoreBlogRequest;
 use App\Http\Requests\UpdateBlogRequest;
 use Illuminate\Support\Str;
+use App\Enums\NotificationType;
+use App\Enums\UserRole;
+use App\Models\User;
+use App\Services\NotificationService;
 
 class BlogController extends Controller
 {
@@ -29,7 +33,7 @@ class BlogController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreBlogRequest $request)
+    public function store(StoreBlogRequest $request, NotificationService $notificationService)
     {
         $this->authorize('create', Blog::class);
 
@@ -40,6 +44,29 @@ class BlogController extends Controller
             'you_coder_id' => $request->user()->id,
             'status' => 'pending',
         ]);
+
+        $moderators = User::whereIn('role', [
+            UserRole::Admin->value,
+            UserRole::Formateur->value,
+        ])
+            ->where('id', '!=', $request->user()->id)
+            ->get();
+
+        foreach ($moderators as $moderator) {
+            $notificationService->send(
+                recipient: $moderator,
+                type: NotificationType::Blog,
+                title: 'New blog awaiting review',
+                content: "{$request->user()->name} created a new blog: {$blog->title}",
+                actor: $request->user(),
+                data: [
+                    'blog_id' => $blog->id,
+                    'slug' => $blog->slug,
+                    'action' => 'created',
+                ],
+            );
+        }
+
 
         return response()->json($blog, 201);
     }
@@ -56,10 +83,7 @@ class BlogController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Blog $blog)
-    {
-
-    }
+    public function edit(Blog $blog) {}
 
     /**
      * Update the specified resource in storage.
@@ -119,6 +143,4 @@ class BlogController extends Controller
         $status = $blog->is_highlighted ? 'highlighted' : 'unhighlighted';
         return response()->json(['message' => "Blog {$status}"]);
     }
-
-
 }
