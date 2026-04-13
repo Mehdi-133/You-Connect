@@ -44,7 +44,7 @@ class ClubPolicy
 
     public function manageMember(User $user, Club $club): bool
     {
-        return $user->id === $club->creator_id;
+        return $user->id === $club->creator_id || $user->isAdmin();
     }
 
     public function forceDelete(User $user, Club $club): bool
