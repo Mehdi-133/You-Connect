@@ -8,25 +8,24 @@ use Illuminate\Database\Eloquent\Model;
 
 class Club extends Model
 {
-    /** @use HasFactory<ClubFactory> */
     use HasFactory;
 
-    public mixed $you_coder_id;
     protected $fillable = [
         'name',
         'logo',
         'description',
-        'creator_id'
+        'creator_id',
+        'is_suspended',
     ];
 
-    public function youCoder()
+    public function creator()
     {
         return $this->belongsTo(User::class, 'creator_id');
     }
 
     public function members()
     {
-        return $this->belongsToMany(User::class, 'club_user')
+        return $this->belongsToMany(User::class, 'club_user', 'club_id', 'you_coder_id')
             ->withPivot('role', 'joined_at');
     }
 
@@ -36,8 +35,9 @@ class Club extends Model
     }
 
     protected $casts = [
-        'creator_id' => 'integer',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'creator_id'   => 'integer',
+        'is_suspended' => 'boolean',
+        'created_at'   => 'datetime',
+        'updated_at'   => 'datetime',
     ];
 }

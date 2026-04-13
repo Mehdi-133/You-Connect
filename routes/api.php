@@ -3,6 +3,7 @@
 use App\Http\Controllers\AnswersController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\ClubController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\ProfilController;
@@ -47,7 +48,14 @@ Route::middleware('auth:sanctum', 'check.status')->group(function () {
 
     Route::post('likes', [LikeController::class, 'store']);
 
-
+    Route::apiResource('clubs', ClubController::class);
+    Route::post('clubs/{club}/join', [ClubController::class, 'join']);
+    Route::delete('clubs/{club}/leave', [ClubController::class, 'leave']);
+    Route::post('clubs/{club}/invite', [ClubController::class, 'invite']);
+    Route::delete('clubs/{club}/members', [ClubController::class, 'removeMember']);
+    Route::patch('clubs/{club}/members/role', [ClubController::class, 'changeRole']);
+    Route::patch('clubs/{club}/suspend', [ClubController::class, 'suspend']);
+    Route::patch('clubs/{club}/restore', [ClubController::class, 'restore']);
 
     Route::get('users', [ProfilController::class, 'index']);
     Route::get('users/{user}', [ProfilController::class, 'show']);

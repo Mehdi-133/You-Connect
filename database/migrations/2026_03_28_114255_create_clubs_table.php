@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('logo')->nullable();
             $table->text('description')->nullable();
+            $table->boolean('is_suspended')->default(false);
             $table->timestamps();
         });
     }
