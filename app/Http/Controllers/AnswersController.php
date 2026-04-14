@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\NotificationType;
 use App\Models\Answers;
 use App\Http\Requests\StoreAnswersRequest;
 use App\Http\Requests\UpdateAnswersRequest;
 use App\Models\Questions;
-use App\Enums\NotificationType;
 use App\Services\NotificationService;
 
 class AnswersController extends Controller
@@ -14,7 +14,7 @@ class AnswersController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Questions $question, NotificationService $notificationService)
+    public function index(Questions $question)
     {
         $this->authorize('viewAny', Answers::class);
         return $question->answers()->with('youCoder:id,name,photo')->latest()->get();
@@ -115,7 +115,7 @@ class AnswersController extends Controller
         return response()->json(['message' => "Answer {$status}"]);
     }
 
-    public function accept(Answers $answer)
+    public function accept(Answers $answer, NotificationService $notificationService)
     {
         $this->authorize('accept', $answer);
         $answer->update(['is_accepted' => true]);
@@ -123,6 +123,23 @@ class AnswersController extends Controller
         Answers::where('question_id', $answer->question_id)
             ->where('id', '!=', $answer->id)
             ->update(['is_accepted' => false]);
+
+        $recipient = $answer->youCoder;
+
+        if ($recipient && $recipient->id !== request()->user()->id) {
+            $notificationService->send(
+                recipient: $recipient,
+                type: NotificationType::Answer,
+                title: 'Your answer was accepted',
+                content: request()->user()->name . " accepted your answer on the question: {$answer->question->title}",
+                actor: request()->user(),
+                data: [
+                    'answer_id' => $answer->id,
+                    'question_id' => $answer->question_id,
+                    'action' => 'accepted',
+                ],
+            );
+        }
 
         return response()->json(['message' => 'Answer accepted']);
     }

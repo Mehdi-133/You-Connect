@@ -2,6 +2,10 @@
 
 namespace Database\Factories;
 
+use Illuminate\Support\Str;
+use App\Models\User;
+
+
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -16,8 +20,17 @@ class BlogFactory extends Factory
      */
     public function definition(): array
     {
+
+        $title = fake()->sentence();
         return [
-            //
+            'title' => $title,
+            'content' => fake()->paragraph(),
+            'slug' => Str::slug($title) . '-' . Str::random(6),
+            'status' => 'pending',
+            'like_count' => 0,
+            'is_highlighted' => false,
+            'approved_at' => null,
+            'you_coder_id' => User::factory(),
         ];
     }
 }

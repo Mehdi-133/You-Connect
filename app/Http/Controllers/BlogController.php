@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Blog;
-use App\Http\Requests\StoreBlogRequest;
-use App\Http\Requests\UpdateBlogRequest;
-use Illuminate\Support\Str;
 use App\Enums\NotificationType;
 use App\Enums\UserRole;
+use App\Models\Blog;
 use App\Models\User;
+use App\Http\Requests\StoreBlogRequest;
+use App\Http\Requests\UpdateBlogRequest;
 use App\Services\NotificationService;
+use Illuminate\Support\Str;
 
 class BlogController extends Controller
 {
@@ -105,20 +105,56 @@ class BlogController extends Controller
         return response()->json(['message' => 'Blog deleted']);
     }
 
-    public function approve(Blog $blog)
+    public function approve(Blog $blog, NotificationService $notificationService)
     {
         $this->authorize('approve', $blog);
         $blog->update([
             'status' => 'approved',
             'approved_at' => now(),
         ]);
+
+        $recipient = $blog->youCoder;
+
+        if ($recipient && $recipient->id !== request()->user()->id) {
+            $notificationService->send(
+                recipient: $recipient,
+                type: NotificationType::Blog,
+                title: 'Your blog was approved',
+                content: request()->user()->name . " approved your blog: {$blog->title}",
+                actor: request()->user(),
+                data: [
+                    'blog_id' => $blog->id,
+                    'slug' => $blog->slug,
+                    'action' => 'approved',
+                ],
+            );
+        }
+
         return response()->json(['message' => 'Blog approved']);
     }
 
-    public function reject(Blog $blog)
+    public function reject(Blog $blog, NotificationService $notificationService)
     {
         $this->authorize('approve', $blog);
         $blog->update(['status' => 'rejected']);
+
+        $recipient = $blog->youCoder;
+
+        if ($recipient && $recipient->id !== request()->user()->id) {
+            $notificationService->send(
+                recipient: $recipient,
+                type: NotificationType::Blog,
+                title: 'Your blog was rejected',
+                content: request()->user()->name . " rejected your blog: {$blog->title}",
+                actor: request()->user(),
+                data: [
+                    'blog_id' => $blog->id,
+                    'slug' => $blog->slug,
+                    'action' => 'rejected',
+                ],
+            );
+        }
+
         return response()->json(['message' => 'Blog rejected']);
     }
 
