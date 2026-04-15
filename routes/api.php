@@ -15,6 +15,10 @@ use App\Http\Controllers\VoteController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TagController;
+use App\Http\Controllers\InterestController;
+use App\Http\Controllers\ChatController;
+
+
 
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -91,4 +95,11 @@ Route::middleware('auth:sanctum', 'check.status')->group(function () {
     Route::post('likes', [LikeController::class, 'store']);
     Route::apiResource('badges', BadgeController::class)->except(['create', 'edit']);
     Route::apiResource('tags', TagController::class)->except(['create', 'edit']);
+
+
+    Route::apiResource('interests', InterestController::class)->except(['create', 'edit']);
+    Route::post('users/{user}/interests/{interest}', [ProfilController::class, 'addInterest']);
+    Route::delete('users/{user}/interests/{interest}', [ProfilController::class, 'removeInterest']);
+
+    Route::apiResource('chats', ChatController::class)->only(['index', 'store', 'show']);
 });

@@ -9,24 +9,22 @@ use Illuminate\Database\Eloquent\Model;
 
 class Chat extends Model
 {
-    /** @use HasFactory<ChatFactory> */
     use HasFactory;
 
     protected $fillable = [
         'name',
         'type',
-        'club_id'
+        'club_id',
     ];
-
 
     public function club()
     {
         return $this->belongsTo(Club::class);
     }
 
-    public function engaged()
+    public function members()
     {
-        return $this->belongsToMany(User::class, 'chat_user')
+        return $this->belongsToMany(User::class, 'chat_user', 'chat_id', 'you_coder_id')
             ->withPivot('joined_at', 'last_read_at');
     }
 
@@ -41,6 +39,4 @@ class Chat extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
-
-
 }

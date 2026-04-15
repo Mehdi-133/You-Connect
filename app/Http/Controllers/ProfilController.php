@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Enums\NotificationType;
 use App\Services\NotificationService;
+use App\Models\Interest;
+
 
 class ProfilController extends Controller
 {
@@ -123,6 +125,54 @@ class ProfilController extends Controller
 
         return response()->json([
             'message' => 'Badge revoked successfully',
+        ]);
+    }
+
+
+    //selecting interests
+
+    public function addInterest(User $user, Interest $interest)
+    {
+        if (request()->user()->id !== $user->id && !request()->user()->isAdmin()) {
+            return response()->json([
+                'message' => 'You do not have permission to perform this action.',
+            ], 403);
+        }
+
+        if ($user->interests()->where('interests.id', $interest->id)->exists()) {
+            return response()->json([
+                'message' => 'User already has this interest',
+            ], 409);
+        }
+
+        $user->interests()->attach($interest->id, [
+            'selected_at' => now(),
+        ]);
+
+        return response()->json([
+            'message' => 'Interest added successfully',
+            'interest' => $interest,
+        ], 201);
+    }
+
+    public function removeInterest(User $user, Interest $interest)
+    {
+        if (request()->user()->id !== $user->id && !request()->user()->isAdmin()) {
+            return response()->json([
+                'message' => 'You do not have permission to perform this action.',
+            ], 403);
+        }
+
+        if (!$user->interests()->where('interests.id', $interest->id)->exists()) {
+            return response()->json([
+                'message' => 'User does not have this interest',
+            ], 404);
+        }
+
+        $user->interests()->detach($interest->id);
+
+        return response()->json([
+            'message' => 'Interest removed successfully',
         ]);
     }
 }

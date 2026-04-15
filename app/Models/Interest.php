@@ -9,27 +9,23 @@ use Illuminate\Database\Eloquent\Model;
 
 class Interest extends Model
 {
-    /** @use HasFactory<InterestFactory> */
     use HasFactory;
 
-    public mixed $you_coder_id;
     protected $fillable = [
         'name',
         'type',
         'icon',
     ];
 
-    public function youCoder()
+    public function users()
     {
-        return $this->belongsToMany(User::class, 'interest_user')
+        return $this->belongsToMany(User::class, 'interest_user', 'interest_id', 'you_coder_id')
             ->withPivot('selected_at');
     }
 
     protected $casts = [
-        'type'       => InterestType::class,
+        'type' => InterestType::class,
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
-
-
 }

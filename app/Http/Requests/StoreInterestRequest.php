@@ -3,7 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-
+use Illuminate\Validation\Rules\Enum;
+use App\Enums\InterestType;
 class StoreInterestRequest extends FormRequest
 {
     /**
@@ -11,7 +12,7 @@ class StoreInterestRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true ;
     }
 
     /**
@@ -21,8 +22,10 @@ class StoreInterestRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            //
+         return [
+            'name' => 'required|string|max:255|unique:interests,name',
+            'type' => ['required', new Enum(InterestType::class)],
+            'icon' => 'nullable|string|max:255',
         ];
     }
 }

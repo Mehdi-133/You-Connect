@@ -3,6 +3,9 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Enum;
+use App\Enums\InterestType;
 
 class UpdateInterestRequest extends FormRequest
 {
@@ -11,7 +14,7 @@ class UpdateInterestRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +25,14 @@ class UpdateInterestRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'name' => [
+                'sometimes',
+                'string',
+                'max:255',
+                Rule::unique('interests', 'name')->ignore($this->route('interest')),
+            ],
+            'type' => ['sometimes', new Enum(InterestType::class)],
+            'icon' => 'nullable|string|max:255',
         ];
     }
 }
