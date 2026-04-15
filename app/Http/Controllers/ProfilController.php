@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Badge;
 use App\Models\User;
 use App\Enums\UserRole;
 use Illuminate\Http\Request;
@@ -68,5 +69,42 @@ class ProfilController extends Controller
 
         $user->update(['role' => $request->input('role')]);
         return response()->json(['message' => 'Role updated', 'role' => $user->role]);
+    }
+
+    public function assignBadge(User $user, Badge $badge)
+    {
+        $this->authorize('assignBadge', [$user, $badge]);
+
+        if ($user->badges()->where('badges.id', $badge->id)->exists()) {
+            return response()->json([
+                'message' => 'User already has this badge',
+            ], 409);
+        }
+
+        $user->badges()->attach($badge->id, [
+            'awarded_at' => now(),
+        ]);
+
+        return response()->json([
+            'message' => 'Badge assigned successfully',
+            'badge' => $badge,
+        ], 201);
+    }
+
+    public function revokeBadge(User $user, Badge $badge)
+    {
+        $this->authorize('revokeBadge', [$user, $badge]);
+
+        if (!$user->badges()->where('badges.id', $badge->id)->exists()) {
+            return response()->json([
+                'message' => 'User does not have this badge',
+            ], 404);
+        }
+
+        $user->badges()->detach($badge->id);
+
+        return response()->json([
+            'message' => 'Badge revoked successfully',
+        ]);
     }
 }

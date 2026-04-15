@@ -97,4 +97,78 @@ class BadgeTest extends TestCase
             'id' => $badge->id,
         ]);
     }
+
+    public function test_admin_can_assign_badge_to_user(): void
+    {
+        $admin = User::factory()->create([
+            'role' => UserRole::Admin,
+        ]);
+        $user = User::factory()->create();
+        $badge = Badge::factory()->create();
+
+        $response = $this->actingAs($admin, 'sanctum')
+            ->postJson("/api/users/{$user->id}/badges/{$badge->id}");
+
+        $response->assertStatus(201);
+
+        $this->assertDatabaseHas('badge_user', [
+            'you_coder_id' => $user->id,
+            'badge_id' => $badge->id,
+        ]);
+    }
+
+    public function test_non_admin_cannot_assign_badge_to_user(): void
+    {
+        $student = User::factory()->create([
+            'role' => UserRole::Student,
+        ]);
+        $user = User::factory()->create();
+        $badge = Badge::factory()->create();
+
+        $response = $this->actingAs($student, 'sanctum')
+            ->postJson("/api/users/{$user->id}/badges/{$badge->id}");
+
+        $response->assertForbidden();
+    }
+
+    public function test_cannot_assign_same_badge_twice(): void
+    {
+        $admin = User::factory()->create([
+            'role' => UserRole::Admin,
+        ]);
+        $user = User::factory()->create();
+        $badge = Badge::factory()->create();
+
+        $user->badges()->attach($badge->id, [
+            'awarded_at' => now(),
+        ]);
+
+        $response = $this->actingAs($admin, 'sanctum')
+            ->postJson("/api/users/{$user->id}/badges/{$badge->id}");
+
+        $response->assertStatus(409);
+    }
+
+    public function test_admin_can_revoke_badge_from_user(): void
+    {
+        $admin = User::factory()->create([
+            'role' => UserRole::Admin,
+        ]);
+        $user = User::factory()->create();
+        $badge = Badge::factory()->create();
+
+        $user->badges()->attach($badge->id, [
+            'awarded_at' => now(),
+        ]);
+
+        $response = $this->actingAs($admin, 'sanctum')
+            ->deleteJson("/api/users/{$user->id}/badges/{$badge->id}");
+
+        $response->assertOk();
+
+        $this->assertDatabaseMissing('badge_user', [
+            'you_coder_id' => $user->id,
+            'badge_id' => $badge->id,
+        ]);
+    }
 }

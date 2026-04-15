@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Badge;
 use App\Models\User;
 
 class ProfilPolicy
@@ -37,6 +38,16 @@ class ProfilPolicy
     }
 
     public function changeRole(User $user): bool
+    {
+        return $user->isAdmin();
+    }
+
+    public function assignBadge(User $user, User $model, Badge $badge): bool
+    {
+        return $user->isAdmin();
+    }
+
+    public function revokeBadge(User $user, User $model, Badge $badge): bool
     {
         return $user->isAdmin();
     }

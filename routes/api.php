@@ -61,6 +61,8 @@ Route::middleware('auth:sanctum', 'check.status')->group(function () {
     Route::patch('clubs/{club}/suspend', [ClubController::class, 'suspend']);
     Route::patch('clubs/{club}/restore', [ClubController::class, 'restore']);
 
+    Route::post('users/{user}/badges/{badge}', [ProfilController::class, 'assignBadge']);
+    Route::delete('users/{user}/badges/{badge}', [ProfilController::class, 'revokeBadge']);
     Route::get('users', [ProfilController::class, 'index']);
     Route::get('users/{user}', [ProfilController::class, 'show']);
     Route::put('users/{user}', [ProfilController::class, 'update']);
