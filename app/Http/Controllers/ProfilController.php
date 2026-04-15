@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Enums\UserRole;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Enums\NotificationType;
+use App\Services\NotificationService;
 
 class ProfilController extends Controller
 {
@@ -71,7 +73,7 @@ class ProfilController extends Controller
         return response()->json(['message' => 'Role updated', 'role' => $user->role]);
     }
 
-    public function assignBadge(User $user, Badge $badge)
+    public function assignBadge(User $user, Badge $badge, NotificationService $notificationService)
     {
         $this->authorize('assignBadge', [$user, $badge]);
 
@@ -85,11 +87,27 @@ class ProfilController extends Controller
             'awarded_at' => now(),
         ]);
 
+        if (request()->user()->id !== $user->id) {
+            $notificationService->send(
+                recipient: $user,
+                type: NotificationType::Badge,
+                title: 'You received a new badge',
+                content: request()->user()->name . " awarded you the badge: {$badge->name}",
+                actor: request()->user(),
+                data: [
+                    'badge_id' => $badge->id,
+                    'badge_name' => $badge->name,
+                    'action' => 'awarded',
+                ],
+            );
+        }
+
         return response()->json([
             'message' => 'Badge assigned successfully',
             'badge' => $badge,
         ], 201);
     }
+
 
     public function revokeBadge(User $user, Badge $badge)
     {

@@ -117,6 +117,29 @@ class BadgeTest extends TestCase
         ]);
     }
 
+    public function test_assigning_badge_creates_notification(): void
+    {
+        $admin = User::factory()->create([
+            'role' => UserRole::Admin,
+        ]);
+        $user = User::factory()->create();
+        $badge = Badge::factory()->create([
+            'name' => 'Top Helper',
+        ]);
+
+        $response = $this->actingAs($admin, 'sanctum')
+            ->postJson("/api/users/{$user->id}/badges/{$badge->id}");
+
+        $response->assertStatus(201);
+
+        $this->assertDatabaseHas('notifications', [
+            'you_coder_id' => $user->id,
+            'actor_id' => $admin->id,
+            'type' => 'badge',
+            'title' => 'You received a new badge',
+        ]);
+    }
+
     public function test_non_admin_cannot_assign_badge_to_user(): void
     {
         $student = User::factory()->create([

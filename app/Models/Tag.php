@@ -21,13 +21,11 @@ class Tag extends Model
 
     public function questions()
     {
-        return $this->belongsToMany(Questions::class, 'question_tag');
+        return $this->belongsToMany(Questions::class, 'question_tag', 'tag_id', 'question_id');
     }
 
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
-
-
 }

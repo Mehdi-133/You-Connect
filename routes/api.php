@@ -14,6 +14,8 @@ use App\Http\Controllers\QuestionsController;
 use App\Http\Controllers\VoteController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TagController;
+
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -85,4 +87,8 @@ Route::middleware('auth:sanctum', 'check.status')->group(function () {
     Route::delete('notifications/{notification}', [NotificationController::class, 'destroy']);
     Route::delete('notifications', [NotificationController::class, 'destroyAll']);
 
+    Route::apiResource('tags', TagController::class)->except(['create', 'edit']);
+    Route::post('likes', [LikeController::class, 'store']);
+    Route::apiResource('badges', BadgeController::class)->except(['create', 'edit']);
+    Route::apiResource('tags', TagController::class)->except(['create', 'edit']);
 });

@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Badge;
 use App\Http\Requests\StoreBadgeRequest;
 use App\Http\Requests\UpdateBadgeRequest;
+use App\Enums\NotificationType;
+use App\Services\NotificationService;
+
 
 class BadgeController extends Controller
 {
@@ -48,4 +51,6 @@ class BadgeController extends Controller
 
         return response()->json(['message' => 'Badge deleted']);
     }
+
+
 }
