@@ -4,6 +4,7 @@ use App\Http\Controllers\IventsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AnswersController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\ClubController;
 use App\Http\Controllers\CommentController;
@@ -49,6 +50,7 @@ Route::middleware('auth:sanctum', 'check.status')->group(function () {
 
 
     Route::post('likes', [LikeController::class, 'store']);
+    Route::apiResource('badges', BadgeController::class)->except(['create', 'edit']);
 
     Route::apiResource('clubs', ClubController::class);
     Route::post('clubs/{club}/join', [ClubController::class, 'join']);

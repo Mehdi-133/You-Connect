@@ -8,59 +8,44 @@ use App\Http\Requests\UpdateBadgeRequest;
 
 class BadgeController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $this->authorize('viewAny', Badge::class);
+
+        return Badge::latest()->paginate(10);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(StoreBadgeRequest $request)
     {
-        //
+        $this->authorize('create', Badge::class);
+
+        $badge = Badge::create($request->validated());
+
+        return response()->json($badge, 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Badge $badge)
     {
-        //
+        $this->authorize('view', $badge);
+
+        return $badge;
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Badge $badge)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(UpdateBadgeRequest $request, Badge $badge)
     {
-        //
+        $this->authorize('update', $badge);
+
+        $badge->update($request->validated());
+
+        return response()->json($badge);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Badge $badge)
     {
-        //
+        $this->authorize('delete', $badge);
+
+        $badge->delete();
+
+        return response()->json(['message' => 'Badge deleted']);
     }
 }

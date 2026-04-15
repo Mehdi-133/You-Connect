@@ -9,15 +9,13 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class BadgeFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            //
+            'name' => fake()->unique()->words(2, true),
+            'description' => fake()->sentence(),
+            'icon' => fake()->slug(),
+            'points_required' => fake()->numberBetween(0, 1000),
         ];
     }
 }

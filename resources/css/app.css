@@ -1,3 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    :root {
+        color-scheme: light;
+        --bg: 255 248 231;
+        --bg-elevated: 255 252 245;
+        --bg-panel: 255 242 219;
+        --fg: 17 17 17;
+        --fg-muted: 92 84 74;
+        --line: 234 221 193;
+        --brand-mint: 37 242 160;
+        --brand-cyan: 41 207 255;
+        --brand-violet: 163 77 255;
+        --brand-gold: 255 211 39;
+        --brand-coral: 255 122 89;
+        --brand-pink: 255 102 214;
+        --brand-cream: 255 243 220;
+    }
+
+    .dark {
+        color-scheme: dark;
+        --bg: 7 7 7;
+        --bg-elevated: 17 17 17;
+        --bg-panel: 25 25 25;
+        --fg: 255 243 220;
+        --fg-muted: 183 175 159;
+        --line: 48 48 48;
+    }
+
+    html {
+        @apply scroll-smooth;
+    }
+
+    body {
+        @apply min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--fg))] font-sans antialiased;
+        background-image:
+            radial-gradient(circle at top left, rgba(var(--brand-violet), 0.18), transparent 25%),
+            radial-gradient(circle at top right, rgba(var(--brand-mint), 0.16), transparent 22%),
+            radial-gradient(circle at 50% 20%, rgba(var(--brand-gold), 0.12), transparent 20%),
+            linear-gradient(180deg, rgba(var(--bg), 1), rgba(var(--bg), 1));
+    }
+
+    #app {
+        @apply min-h-screen;
+    }
+}
+
+@layer components {
+    .surface {
+        @apply border border-[rgb(var(--line))] bg-[rgb(var(--bg-elevated))] shadow-card;
+        box-shadow:
+            0 0 0 3px rgba(var(--brand-cream), 0.05),
+            0 18px 40px rgba(0, 0, 0, 0.18);
+    }
+
+    .page-shell {
+        @apply min-h-screen;
+    }
+
+    .brand-gradient {
+        background-image: linear-gradient(135deg, rgb(var(--brand-violet)) 0%, rgb(var(--brand-cyan)) 35%, rgb(var(--brand-mint)) 68%, rgb(var(--brand-gold)) 100%);
+    }
+
+    .hero-gradient {
+        background-image:
+            radial-gradient(circle at 20% 20%, rgba(var(--brand-violet), 0.22), transparent 24%),
+            radial-gradient(circle at 80% 0%, rgba(var(--brand-mint), 0.2), transparent 20%),
+            radial-gradient(circle at 80% 70%, rgba(var(--brand-gold), 0.16), transparent 20%),
+            radial-gradient(circle at 5% 65%, rgba(var(--brand-cyan), 0.12), transparent 15%);
+    }
+
+    .text-gradient {
+        background-image: linear-gradient(135deg, rgb(var(--brand-cream)) 0%, rgb(var(--brand-gold)) 22%, rgb(var(--brand-pink)) 48%, rgb(var(--brand-cyan)) 72%, rgb(var(--brand-mint)) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .festival-card {
+        @apply rounded-[2rem] border-2 border-black/80 dark:border-white/10;
+        box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.9);
+    }
+}
