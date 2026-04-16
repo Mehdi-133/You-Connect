@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Enums\NotificationType;
+use App\Enums\ReputationReason;
 use App\Enums\UserRole;
 use App\Models\Blog;
 use App\Models\User;
 use App\Http\Requests\StoreBlogRequest;
 use App\Http\Requests\UpdateBlogRequest;
 use App\Services\NotificationService;
+use App\Services\ReputationService;
 use Illuminate\Support\Str;
 
 class BlogController extends Controller
@@ -105,9 +107,14 @@ class BlogController extends Controller
         return response()->json(['message' => 'Blog deleted']);
     }
 
-    public function approve(Blog $blog, NotificationService $notificationService)
+    public function approve(
+        Blog $blog,
+        NotificationService $notificationService,
+        ReputationService $reputationService
+    )
     {
         $this->authorize('approve', $blog);
+        $wasApproved = $blog->status === \App\Enums\BlogStatus::Approved;
         $blog->update([
             'status' => 'approved',
             'approved_at' => now(),
@@ -116,6 +123,10 @@ class BlogController extends Controller
         $recipient = $blog->youCoder;
 
         if ($recipient && $recipient->id !== request()->user()->id) {
+            if (!$wasApproved) {
+                $reputationService->apply($recipient, ReputationReason::BlogApproved);
+            }
+
             $notificationService->send(
                 recipient: $recipient,
                 type: NotificationType::Blog,

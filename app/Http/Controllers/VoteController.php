@@ -3,15 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Enums\NotificationType;
+use App\Enums\ReputationReason;
 use App\Enums\VoteType;
 use App\Http\Requests\StoreVoteRequest;
 use App\Models\Answers;
 use App\Models\Vote;
 use App\Services\NotificationService;
+use App\Services\ReputationService;
 
 class VoteController extends Controller
 {
-    public function store(StoreVoteRequest $request, NotificationService $notificationService)
+    public function store(
+        StoreVoteRequest $request,
+        NotificationService $notificationService,
+        ReputationService $reputationService
+    )
     {
         $answer = Answers::findOrFail($request->input('answer_id'));
         $requestedType = VoteType::from($request->input('type'));
@@ -61,10 +67,12 @@ class VoteController extends Controller
 
         $answer->increment('vote_count');
 
-        if ($requestedType === VoteType::UpVote) {
-            $recipient = $answer->youCoder;
+        $recipient = $answer->youCoder;
 
-            if ($recipient && $recipient->id !== $request->user()->id) {
+        if ($recipient && $recipient->id !== $request->user()->id) {
+            if ($requestedType === VoteType::UpVote) {
+                $reputationService->apply($recipient, ReputationReason::AnswerUpvoted);
+
                 $notificationService->send(
                     recipient: $recipient,
                     type: NotificationType::Vote,
@@ -77,6 +85,10 @@ class VoteController extends Controller
                         'action' => 'upvoted',
                     ],
                 );
+            }
+
+            if ($requestedType === VoteType::DownVote) {
+                $reputationService->apply($recipient, ReputationReason::AnswerDownvoted);
             }
         }
 

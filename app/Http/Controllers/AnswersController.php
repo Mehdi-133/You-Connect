@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Enums\NotificationType;
+use App\Enums\ReputationReason;
 use App\Models\Answers;
 use App\Http\Requests\StoreAnswersRequest;
 use App\Http\Requests\UpdateAnswersRequest;
 use App\Models\Questions;
 use App\Services\NotificationService;
+use App\Services\ReputationService;
 
 class AnswersController extends Controller
 {
@@ -115,9 +117,14 @@ class AnswersController extends Controller
         return response()->json(['message' => "Answer {$status}"]);
     }
 
-    public function accept(Answers $answer, NotificationService $notificationService)
+    public function accept(
+        Answers $answer,
+        NotificationService $notificationService,
+        ReputationService $reputationService
+    )
     {
         $this->authorize('accept', $answer);
+        $wasAccepted = $answer->is_accepted;
         $answer->update(['is_accepted' => true]);
 
         Answers::where('question_id', $answer->question_id)
@@ -127,6 +134,10 @@ class AnswersController extends Controller
         $recipient = $answer->youCoder;
 
         if ($recipient && $recipient->id !== request()->user()->id) {
+            if (!$wasAccepted) {
+                $reputationService->apply($recipient, ReputationReason::AnswerAccepted);
+            }
+
             $notificationService->send(
                 recipient: $recipient,
                 type: NotificationType::Answer,

@@ -3,14 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Enums\NotificationType;
+use App\Enums\ReputationReason;
 use App\Http\Requests\StoreLikeRequest;
 use App\Models\Blog;
 use App\Models\Like;
 use App\Services\NotificationService;
+use App\Services\ReputationService;
 
 class LikeController extends Controller
 {
-    public function store(StoreLikeRequest $request, NotificationService $notificationService)
+    public function store(
+        StoreLikeRequest $request,
+        NotificationService $notificationService,
+        ReputationService $reputationService
+    )
     {
         $blog = Blog::findOrFail($request->input('blog_id'));
 
@@ -38,6 +44,8 @@ class LikeController extends Controller
         $recipient = $blog->youCoder;
 
         if ($recipient && $recipient->id !== $request->user()->id) {
+            $reputationService->apply($recipient, ReputationReason::BlogLiked);
+
             $notificationService->send(
                 recipient: $recipient,
                 type: NotificationType::Like,
