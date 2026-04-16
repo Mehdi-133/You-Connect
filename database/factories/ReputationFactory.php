@@ -1,6 +1,7 @@
 <?php
 
 namespace Database\Factories;
+use App\Models\User;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -17,7 +18,9 @@ class ReputationFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'you_coder_id' => User::factory(),
+            'points' => fake()->numberBetween(-5, 20),
+            'reason' => fake()->word(),
         ];
     }
 }

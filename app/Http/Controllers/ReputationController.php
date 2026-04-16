@@ -3,64 +3,54 @@
 namespace App\Http\Controllers;
 
 use App\Models\Reputation;
-use App\Http\Requests\StoreReputationRequest;
-use App\Http\Requests\UpdateReputationRequest;
+use App\Models\User;
+use Illuminate\Http\Request;
 
 class ReputationController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $this->authorize('viewAny', Reputation::class);
+
+        $userId = $request->query('user_id');
+
+        if ($userId) {
+            $targetUser = User::findOrFail($userId);
+
+            if ($request->user()->id !== $targetUser->id && !$request->user()->isAdmin()) {
+                return response()->json([
+                    'message' => 'You do not have permission to view this reputation history.',
+                ], 403);
+            }
+
+            return Reputation::where('you_coder_id', $targetUser->id)
+                ->latest()
+                ->paginate(15);
+        }
+
+        return Reputation::where('you_coder_id', $request->user()->id)
+            ->latest()
+            ->paginate(15);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreReputationRequest $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
     public function show(Reputation $reputation)
     {
-        //
+        $this->authorize('view', $reputation);
+
+        return $reputation;
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Reputation $reputation)
+    public function userScore(User $user, Request $request)
     {
-        //
-    }
+        if ($request->user()->id !== $user->id && !$request->user()->isAdmin()) {
+            return response()->json([
+                'message' => 'You do not have permission to view this score.',
+            ], 403);
+        }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateReputationRequest $request, Reputation $reputation)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Reputation $reputation)
-    {
-        //
+        return response()->json([
+            'user_id' => $user->id,
+            'reputation' => $user->reputation,
+        ]);
     }
 }

@@ -18,6 +18,8 @@ use App\Http\Controllers\TagController;
 use App\Http\Controllers\InterestController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\ReputationController;
+
 
 
 
@@ -111,4 +113,7 @@ Route::middleware('auth:sanctum', 'check.status')->group(function () {
     Route::delete('messages/{message}', [MessageController::class, 'destroy']);
     Route::put('messages/{message}', [MessageController::class, 'update']);
 
+    Route::get('reputations', [ReputationController::class, 'index']);
+    Route::get('reputations/{reputation}', [ReputationController::class, 'show']);
+    Route::get('users/{user}/score', [ReputationController::class, 'userScore']);
 });
