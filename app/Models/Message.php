@@ -2,8 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\MessageType;
-use Database\Factories\MessageFactory;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -13,7 +12,6 @@ class Message extends Model
     /** @use HasFactory<MessageFactory> */
     use HasFactory, SoftDeletes;
 
-    public mixed $sender_id;
     protected $fillable = [
         'content',
         'type',

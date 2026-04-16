@@ -2,65 +2,73 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Message;
+use App\Enums\MessageType;
 use App\Http\Requests\StoreMessageRequest;
+use App\Models\Chat;
+use App\Models\Message;
+use Illuminate\Http\Request;
 use App\Http\Requests\UpdateMessageRequest;
+use Database\Factories\MessageFactory;
+
 
 class MessageController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Chat $chat)
     {
-        //
+        $this->authorize('view', $chat);
+
+        return $chat->messages()
+            ->with('sender:id,name,photo')
+            ->latest()
+            ->paginate(20);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function store(StoreMessageRequest $request, Chat $chat)
     {
-        //
+        $this->authorize('sendMessage', $chat);
+
+        $message = Message::create([
+            'content' => $request->input('content'),
+            'type' => $request->input('type', MessageType::Text->value),
+            'chat_id' => $chat->id,
+            'sender_id' => $request->user()->id,
+        ]);
+
+        return response()->json(
+            $message->load('sender:id,name,photo'),
+            201
+        );
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreMessageRequest $request)
-    {
-        //
-    }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Message $message)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Message $message)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(UpdateMessageRequest $request, Message $message)
     {
-        //
+        $this->authorize('update', $message);
+
+        if ($message->type !== MessageType::Text) {
+            return response()->json([
+                'message' => 'Only text messages can be updated',
+            ], 422);
+        }
+
+        $message->update([
+            'content' => $request->input('content'),
+        ]);
+
+        return response()->json(
+            $message->load('sender:id,name,photo')
+        );
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+
     public function destroy(Message $message)
     {
-        //
+        $this->authorize('delete', $message);
+
+        $message->delete();
+
+        return response()->json([
+            'message' => 'Message deleted',
+        ]);
     }
 }

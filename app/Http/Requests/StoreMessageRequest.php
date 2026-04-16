@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Enums\MessageType;
+use Illuminate\Validation\Rules\Enum;
 
 class StoreMessageRequest extends FormRequest
 {
@@ -11,7 +13,7 @@ class StoreMessageRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +24,8 @@ class StoreMessageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'content' => 'required|string',
+            'type' => ['sometimes', new Enum(MessageType::class)],
         ];
     }
 }

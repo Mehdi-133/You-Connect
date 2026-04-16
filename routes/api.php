@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\InterestController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\MessageController;
+
 
 
 
@@ -102,4 +104,11 @@ Route::middleware('auth:sanctum', 'check.status')->group(function () {
     Route::delete('users/{user}/interests/{interest}', [ProfilController::class, 'removeInterest']);
 
     Route::apiResource('chats', ChatController::class)->only(['index', 'store', 'show']);
+
+
+    Route::get('chats/{chat}/messages', [MessageController::class, 'index']);
+    Route::post('chats/{chat}/messages', [MessageController::class, 'store']);
+    Route::delete('messages/{message}', [MessageController::class, 'destroy']);
+    Route::put('messages/{message}', [MessageController::class, 'update']);
+
 });
