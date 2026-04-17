@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { MarketingLayout } from '../shared/layouts/MarketingLayout';
 import { AppLayout } from '../shared/layouts/AppLayout';
 import { LandingPage } from '../features/marketing/pages/LandingPage';
@@ -9,17 +10,32 @@ import { QuestionsPage } from '../features/questions/pages/QuestionsPage';
 import { BlogsPage } from '../features/blogs/pages/BlogsPage';
 import { NotificationsPage } from '../features/notifications/pages/NotificationsPage';
 import { ProfilePage } from '../features/profile/pages/ProfilePage';
+import { ProtectedRoute } from './ProtectedRoute';
 
 export function AppRouter() {
+    const { isAuthenticated } = useAuth();
+
     return (
         <Routes>
             <Route element={<MarketingLayout />}>
                 <Route path="/" element={<LandingPage />} />
-                <Route path="/sign-in" element={<SignInPage />} />
-                <Route path="/sign-up" element={<SignUpPage />} />
+                <Route
+                    path="/sign-in"
+                    element={isAuthenticated ? <Navigate to="/app" replace /> : <SignInPage />}
+                />
+                <Route
+                    path="/sign-up"
+                    element={isAuthenticated ? <Navigate to="/app" replace /> : <SignUpPage />}
+                />
             </Route>
 
-            <Route element={<AppLayout />}>
+            <Route
+                element={(
+                    <ProtectedRoute isAllowed={isAuthenticated}>
+                        <AppLayout />
+                    </ProtectedRoute>
+                )}
+            >
                 <Route path="/app" element={<StudentDashboardPage />} />
                 <Route path="/app/questions" element={<QuestionsPage />} />
                 <Route path="/app/blogs" element={<BlogsPage />} />
