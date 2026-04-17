@@ -4,7 +4,9 @@ import { SectionCard } from '../../../shared/components/SectionCard';
 import { EmptyState } from '../../../shared/ui/feedback/EmptyState';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
 import { LoadingState } from '../../../shared/ui/feedback/LoadingState';
-import { createAnswer, getQuestion, getQuestionAnswers } from '../../../services/api/questions.service';
+import { useAuth } from '../../../hooks/useAuth';
+import { isFormateur } from '../../../shared/utils/roles';
+import { acceptAnswer, createAnswer, getQuestion, getQuestionAnswers, voteAnswer } from '../../../services/api/questions.service';
 import { QuestionAnswerCard } from '../components/QuestionAnswerCard';
 
 function getTagTone(index) {
@@ -29,6 +31,7 @@ function getQuestionStatusLabel(question, answers) {
 }
 
 export function QuestionDetailsPage() {
+    const { user } = useAuth();
     const { questionId } = useParams();
     const [question, setQuestion] = useState(null);
     const [answers, setAnswers] = useState([]);
@@ -38,6 +41,9 @@ export function QuestionDetailsPage() {
     const [answerError, setAnswerError] = useState('');
     const [answerFieldErrors, setAnswerFieldErrors] = useState({});
     const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
+    const [voteSelections, setVoteSelections] = useState({});
+    const [processingAnswerId, setProcessingAnswerId] = useState(null);
+    const [interactionError, setInteractionError] = useState('');
 
     useEffect(() => {
         let isMounted = true;
@@ -85,6 +91,7 @@ export function QuestionDetailsPage() {
         event.preventDefault();
         setAnswerError('');
         setAnswerFieldErrors({});
+        setInteractionError('');
         setIsSubmittingAnswer(true);
 
         try {
@@ -108,6 +115,88 @@ export function QuestionDetailsPage() {
             setAnswerFieldErrors(requestError.response?.data?.errors || {});
         } finally {
             setIsSubmittingAnswer(false);
+        }
+    }
+
+    function canAcceptAnswer(answer) {
+        return Boolean(
+            user &&
+            question &&
+            (question.you_coder?.id === user.id || isFormateur(user))
+        );
+    }
+
+    function canVoteAnswer(answer) {
+        return Boolean(user && user.id !== answer.you_coder?.id);
+    }
+
+    async function handleAcceptAnswer(answer) {
+        setInteractionError('');
+        setProcessingAnswerId(answer.id);
+
+        try {
+            await acceptAnswer(answer.id);
+
+            setAnswers((currentAnswers) =>
+                currentAnswers.map((item) => ({
+                    ...item,
+                    is_accepted: item.id === answer.id,
+                }))
+            );
+        } catch (requestError) {
+            setInteractionError(
+                requestError.response?.data?.message ||
+                'We could not accept this answer right now.'
+            );
+        } finally {
+            setProcessingAnswerId(null);
+        }
+    }
+
+    async function handleVoteAnswer(answer, type) {
+        setInteractionError('');
+        setProcessingAnswerId(answer.id);
+
+        try {
+            const response = await voteAnswer({
+                answer_id: answer.id,
+                type,
+            });
+
+            const previousVote = voteSelections[answer.id] || null;
+            let nextVote = previousVote;
+            let countDelta = 0;
+
+            if (response.message === 'Vote removed') {
+                nextVote = null;
+                countDelta = -1;
+            } else if (response.message === 'Vote switched') {
+                nextVote = type;
+                countDelta = 0;
+            } else {
+                nextVote = type;
+                countDelta = previousVote ? 0 : 1;
+            }
+
+            setVoteSelections((currentVotes) => ({
+                ...currentVotes,
+                [answer.id]: nextVote,
+            }));
+
+            setAnswers((currentAnswers) =>
+                currentAnswers.map((item) =>
+                    item.id === answer.id
+                        ? { ...item, vote_count: Math.max(0, (item.vote_count || 0) + countDelta) }
+                        : item
+                )
+            );
+        } catch (requestError) {
+            setInteractionError(
+                requestError.response?.data?.message ||
+                'We could not update your vote right now.'
+            );
+        } finally {
+            setProcessingAnswerId(null);
         }
     }
 
@@ -188,6 +277,10 @@ export function QuestionDetailsPage() {
                     </div>
                 ) : null}
 
+                {interactionError ? (
+                    <p className="mt-6 text-sm font-bold text-[#FFD327]">{interactionError}</p>
+                ) : null}
+
                 <form onSubmit={handleCreateAnswer} className="mt-8 grid gap-4 rounded-[2rem] border border-white/10 bg-white/5 p-5">
                     <div>
                         <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
@@ -224,7 +317,16 @@ export function QuestionDetailsPage() {
             {answers.length ? (
                 <div className="grid gap-4">
                     {answers.map((answer) => (
-                        <QuestionAnswerCard key={answer.id} answer={answer} />
+                        <QuestionAnswerCard
+                            key={answer.id}
+                            answer={answer}
+                            canAccept={canAcceptAnswer(answer)}
+                            canVote={canVoteAnswer(answer)}
+                            currentVote={voteSelections[answer.id] || null}
+                            isProcessing={processingAnswerId === answer.id}
+                            onAccept={handleAcceptAnswer}
+                            onVote={handleVoteAnswer}
+                        />
                     ))}
                 </div>
             ) : (

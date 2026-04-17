@@ -10,7 +10,18 @@ function formatAnswerDate(value) {
     }).format(new Date(value));
 }
 
-export function QuestionAnswerCard({ answer }) {
+export function QuestionAnswerCard({
+    answer,
+    canAccept = false,
+    canVote = false,
+    currentVote = null,
+    isProcessing = false,
+    onAccept,
+    onVote,
+}) {
+    const upVoteActive = currentVote === 'upVote';
+    const downVoteActive = currentVote === 'downVote';
+
     return (
         <article className="surface festival-card rounded-[2rem] p-5">
             <div className="flex flex-wrap items-center gap-3">
@@ -39,9 +50,54 @@ export function QuestionAnswerCard({ answer }) {
                 {answer.content}
             </p>
 
-            <p className="mt-4 text-xs font-black uppercase tracking-[0.16em] text-[rgb(var(--fg-muted))]">
-                {formatAnswerDate(answer.created_at)}
-            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-[rgb(var(--fg-muted))]">
+                    {formatAnswerDate(answer.created_at)}
+                </p>
+
+                {canVote ? (
+                    <>
+                        <button
+                            type="button"
+                            disabled={isProcessing}
+                            onClick={() => onVote?.(answer, 'upVote')}
+                            className={[
+                                'rounded-full px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] disabled:cursor-not-allowed disabled:opacity-70',
+                                upVoteActive
+                                    ? 'bg-[#25F2A0] text-black'
+                                    : 'border border-[rgb(var(--line))] text-[rgb(var(--fg-muted))]',
+                            ].join(' ')}
+                        >
+                            Upvote
+                        </button>
+
+                        <button
+                            type="button"
+                            disabled={isProcessing}
+                            onClick={() => onVote?.(answer, 'downVote')}
+                            className={[
+                                'rounded-full px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] disabled:cursor-not-allowed disabled:opacity-70',
+                                downVoteActive
+                                    ? 'bg-[#FF66D6] text-black'
+                                    : 'border border-[rgb(var(--line))] text-[rgb(var(--fg-muted))]',
+                            ].join(' ')}
+                        >
+                            Downvote
+                        </button>
+                    </>
+                ) : null}
+
+                {canAccept ? (
+                    <button
+                        type="button"
+                        disabled={isProcessing || answer.is_accepted}
+                        onClick={() => onAccept?.(answer)}
+                        className="rounded-full bg-[#FFD327] px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-black disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                        {answer.is_accepted ? 'Accepted' : 'Accept answer'}
+                    </button>
+                ) : null}
+            </div>
         </article>
     );
 }
