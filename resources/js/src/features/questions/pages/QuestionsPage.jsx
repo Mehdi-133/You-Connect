@@ -3,14 +3,25 @@ import { SectionCard } from '../../../shared/components/SectionCard';
 import { EmptyState } from '../../../shared/ui/feedback/EmptyState';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
 import { LoadingState } from '../../../shared/ui/feedback/LoadingState';
-import { getQuestions } from '../../../services/api/questions.service';
+import { createQuestion, getQuestions } from '../../../services/api/questions.service';
+import { getTags } from '../../../services/api/tags.service';
 import { QuestionFeedCard } from '../components/QuestionFeedCard';
 
 export function QuestionsPage() {
     const [questions, setQuestions] = useState([]);
+    const [availableTags, setAvailableTags] = useState([]);
     const [selectedTopic, setSelectedTopic] = useState('All topics');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [form, setForm] = useState({
+        title: '',
+        content: '',
+        tags: [],
+    });
+    const [formError, setFormError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
         let isMounted = true;
@@ -20,13 +31,17 @@ export function QuestionsPage() {
             setError('');
 
             try {
-                const response = await getQuestions();
+                const [questionsResponse, tagsResponse] = await Promise.all([
+                    getQuestions(),
+                    getTags(),
+                ]);
 
                 if (!isMounted) {
                     return;
                 }
 
-                setQuestions(response.data || []);
+                setQuestions(questionsResponse.data || []);
+                setAvailableTags(tagsResponse.data || []);
             } catch (requestError) {
                 if (!isMounted) {
                     return;
@@ -67,6 +82,58 @@ export function QuestionsPage() {
         );
     }, [questions, selectedTopic]);
 
+    function handleInputChange(event) {
+        const { name, value } = event.target;
+
+        setForm((currentForm) => ({
+            ...currentForm,
+            [name]: value,
+        }));
+    }
+
+    function toggleTag(tagId) {
+        setForm((currentForm) => {
+            const hasTag = currentForm.tags.includes(tagId);
+
+            return {
+                ...currentForm,
+                tags: hasTag
+                    ? currentForm.tags.filter((id) => id !== tagId)
+                    : [...currentForm.tags, tagId],
+            };
+        });
+    }
+
+    async function handleCreateQuestion(event) {
+        event.preventDefault();
+        setFormError('');
+        setFieldErrors({});
+        setSuccessMessage('');
+        setIsSubmitting(true);
+
+        try {
+            const createdQuestion = await createQuestion(form);
+
+            setQuestions((currentQuestions) => [createdQuestion, ...currentQuestions]);
+            setForm({
+                title: '',
+                content: '',
+                tags: [],
+            });
+            setSelectedTopic('All topics');
+            setSuccessMessage('Question created successfully.');
+        } catch (requestError) {
+            const message =
+                requestError.response?.data?.message ||
+                'We could not create your question right now.';
+
+            setFormError(message);
+            setFieldErrors(requestError.response?.data?.errors || {});
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
     if (isLoading) {
         return (
             <LoadingState
@@ -106,6 +173,90 @@ export function QuestionsPage() {
                 description="This page now reads the latest questions from Laravel and lets you scan topics, authors, answer counts, and status quickly."
                 className="hero-gradient"
             >
+                <form onSubmit={handleCreateQuestion} className="mb-6 grid gap-4 rounded-[2rem] border border-white/10 bg-white/5 p-5">
+                    <div>
+                        <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                            Question title
+                        </label>
+                        <input
+                            type="text"
+                            name="title"
+                            value={form.title}
+                            onChange={handleInputChange}
+                            placeholder="How should I structure my React feature folders?"
+                            className="w-full rounded-[1.4rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
+                        />
+                        {fieldErrors.title ? (
+                            <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.title[0]}</p>
+                        ) : null}
+                    </div>
+
+                    <div>
+                        <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                            Question details
+                        </label>
+                        <textarea
+                            name="content"
+                            value={form.content}
+                            onChange={handleInputChange}
+                            rows="5"
+                            placeholder="Explain your problem clearly so the community can help."
+                            className="w-full rounded-[1.4rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
+                        />
+                        {fieldErrors.content ? (
+                            <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.content[0]}</p>
+                        ) : null}
+                    </div>
+
+                    <div>
+                        <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                            Tags
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {availableTags.map((tag) => {
+                                const isSelected = form.tags.includes(tag.id);
+
+                                return (
+                                    <button
+                                        key={tag.id}
+                                        type="button"
+                                        onClick={() => toggleTag(tag.id)}
+                                        className={[
+                                            'rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.14em]',
+                                            isSelected
+                                                ? 'bg-[#FFD327] text-black'
+                                                : 'border border-white/10 bg-white/5 text-[#d8cfbd]',
+                                        ].join(' ')}
+                                    >
+                                        {tag.name}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        {fieldErrors.tags ? (
+                            <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.tags[0]}</p>
+                        ) : null}
+                    </div>
+
+                    {formError ? (
+                        <p className="text-sm font-bold text-[#FFD327]">{formError}</p>
+                    ) : null}
+
+                    {successMessage ? (
+                        <p className="text-sm font-bold text-[#25F2A0]">{successMessage}</p>
+                    ) : null}
+
+                    <div>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="festival-card rounded-full bg-[#25F2A0] px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-black disabled:cursor-not-allowed disabled:opacity-70"
+                        >
+                            {isSubmitting ? 'Publishing question...' : 'Ask question'}
+                        </button>
+                    </div>
+                </form>
+
                 <div className="flex flex-wrap gap-3">
                     {topicItems.map((item, index) => (
                         <button

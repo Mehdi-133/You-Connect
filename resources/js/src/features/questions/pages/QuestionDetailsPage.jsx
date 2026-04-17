@@ -4,7 +4,7 @@ import { SectionCard } from '../../../shared/components/SectionCard';
 import { EmptyState } from '../../../shared/ui/feedback/EmptyState';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
 import { LoadingState } from '../../../shared/ui/feedback/LoadingState';
-import { getQuestion, getQuestionAnswers } from '../../../services/api/questions.service';
+import { createAnswer, getQuestion, getQuestionAnswers } from '../../../services/api/questions.service';
 import { QuestionAnswerCard } from '../components/QuestionAnswerCard';
 
 function getTagTone(index) {
@@ -34,6 +34,10 @@ export function QuestionDetailsPage() {
     const [answers, setAnswers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [answerContent, setAnswerContent] = useState('');
+    const [answerError, setAnswerError] = useState('');
+    const [answerFieldErrors, setAnswerFieldErrors] = useState({});
+    const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -76,6 +80,36 @@ export function QuestionDetailsPage() {
             isMounted = false;
         };
     }, [questionId]);
+
+    async function handleCreateAnswer(event) {
+        event.preventDefault();
+        setAnswerError('');
+        setAnswerFieldErrors({});
+        setIsSubmittingAnswer(true);
+
+        try {
+            const createdAnswer = await createAnswer({
+                content: answerContent,
+                question_id: Number(questionId),
+            });
+
+            setAnswers((currentAnswers) => [createdAnswer, ...currentAnswers]);
+            setQuestion((currentQuestion) => ({
+                ...currentQuestion,
+                answers_count: (currentQuestion?.answers_count || 0) + 1,
+            }));
+            setAnswerContent('');
+        } catch (requestError) {
+            const message =
+                requestError.response?.data?.message ||
+                'We could not post your answer right now.';
+
+            setAnswerError(message);
+            setAnswerFieldErrors(requestError.response?.data?.errors || {});
+        } finally {
+            setIsSubmittingAnswer(false);
+        }
+    }
 
     if (isLoading) {
         return (
@@ -153,6 +187,38 @@ export function QuestionDetailsPage() {
                         ))}
                     </div>
                 ) : null}
+
+                <form onSubmit={handleCreateAnswer} className="mt-8 grid gap-4 rounded-[2rem] border border-white/10 bg-white/5 p-5">
+                    <div>
+                        <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                            Your answer
+                        </label>
+                        <textarea
+                            value={answerContent}
+                            onChange={(event) => setAnswerContent(event.target.value)}
+                            rows="5"
+                            placeholder="Share the clearest solution you can."
+                            className="w-full rounded-[1.4rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
+                        />
+                        {answerFieldErrors.content ? (
+                            <p className="mt-2 text-xs font-bold text-[#FFD327]">{answerFieldErrors.content[0]}</p>
+                        ) : null}
+                    </div>
+
+                    {answerError ? (
+                        <p className="text-sm font-bold text-[#FFD327]">{answerError}</p>
+                    ) : null}
+
+                    <div>
+                        <button
+                            type="submit"
+                            disabled={isSubmittingAnswer}
+                            className="festival-card rounded-full bg-[#25F2A0] px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-black disabled:cursor-not-allowed disabled:opacity-70"
+                        >
+                            {isSubmittingAnswer ? 'Posting answer...' : 'Post answer'}
+                        </button>
+                    </div>
+                </form>
             </SectionCard>
 
             {answers.length ? (
