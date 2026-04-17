@@ -3,19 +3,58 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { YouConnectLogo } from '../components/YouConnectLogo';
 import { logout } from '../../services/api/auth.service';
 import { useAuth } from '../../hooks/useAuth';
+import {
+    getRoleLabel,
+    isAdmin,
+    isBdeMembre,
+    isFormateur,
+} from '../utils/roles';
 
-const navigationItems = [
-    { to: '/app', label: 'Dashboard' },
-    { to: '/app/questions', label: 'Questions' },
-    { to: '/app/blogs', label: 'Blogs' },
-    { to: '/app/notifications', label: 'Notifications' },
-    { to: '/app/profile', label: 'Profile' },
-];
+function getNavigationItems(user) {
+    if (isAdmin(user)) {
+        return [
+            { to: '/app', label: 'Dashboard' },
+            { to: '/app/notifications', label: 'Notifications' },
+            { to: '/app/blogs', label: 'Blogs' },
+            { to: '/app/questions', label: 'Questions' },
+            { to: '/app/profile', label: 'Profile' },
+        ];
+    }
+
+    if (isFormateur(user)) {
+        return [
+            { to: '/app', label: 'Dashboard' },
+            { to: '/app/blogs', label: 'Blogs' },
+            { to: '/app/questions', label: 'Questions' },
+            { to: '/app/notifications', label: 'Notifications' },
+            { to: '/app/profile', label: 'Profile' },
+        ];
+    }
+
+    if (isBdeMembre(user)) {
+        return [
+            { to: '/app', label: 'Dashboard' },
+            { to: '/app/blogs', label: 'Blogs' },
+            { to: '/app/notifications', label: 'Notifications' },
+            { to: '/app/questions', label: 'Questions' },
+            { to: '/app/profile', label: 'Profile' },
+        ];
+    }
+
+    return [
+        { to: '/app', label: 'Dashboard' },
+        { to: '/app/questions', label: 'Questions' },
+        { to: '/app/blogs', label: 'Blogs' },
+        { to: '/app/notifications', label: 'Notifications' },
+        { to: '/app/profile', label: 'Profile' },
+    ];
+}
 
 export function AppLayout() {
     const navigate = useNavigate();
     const { signOut, user } = useAuth();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const navigationItems = getNavigationItems(user);
 
     async function handleLogout() {
         setIsLoggingOut(true);
@@ -48,9 +87,7 @@ export function AppLayout() {
                     {user ? (
                         <>
                             <p className="mt-3 text-lg font-bold text-[#FFF3DC]">{user.name}</p>
-                            <p className="mt-1 text-sm text-[#d8cfbd]">
-                                {user.role ? `Role: ${user.role}` : 'Authenticated user'}
-                            </p>
+                            <p className="mt-1 text-sm text-[#d8cfbd]">Role: {getRoleLabel(user)}</p>
                         </>
                     ) : null}
                     <div className="mt-4 flex flex-wrap gap-2">
