@@ -10,6 +10,18 @@ function formatAnswerDate(value) {
     }).format(new Date(value));
 }
 
+function getInitials(name) {
+    if (!name) {
+        return 'YC';
+    }
+
+    return name
+        .split(' ')
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase())
+        .join('');
+}
+
 export function QuestionAnswerCard({
     answer,
     canAccept = false,
@@ -23,38 +35,51 @@ export function QuestionAnswerCard({
     const downVoteActive = currentVote === 'downVote';
 
     return (
-        <article className="surface festival-card rounded-[2rem] p-5">
-            <div className="flex flex-wrap items-center gap-3">
-                <span className="h-3 w-20 rounded-full bg-[#29CFFF]" />
-                {answer.is_accepted ? (
-                    <span className="rounded-full bg-[#25F2A0] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-black">
-                        Accepted
-                    </span>
-                ) : null}
-                {answer.is_highlighted ? (
-                    <span className="rounded-full bg-[#FFD327] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-black">
-                        Highlighted
-                    </span>
-                ) : null}
-                <span className="rounded-full border border-[rgb(var(--line))] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[rgb(var(--fg-muted))]">
-                    {answer.vote_count || 0} votes
-                </span>
-                {answer.you_coder ? (
-                    <span className="rounded-full border border-[rgb(var(--line))] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[rgb(var(--fg-muted))]">
-                        {answer.you_coder.name}
-                    </span>
-                ) : null}
+        <article className="surface festival-card rounded-[2rem] p-5 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
+            <div className="flex items-start gap-4">
+                {answer.you_coder?.photo ? (
+                    <img
+                        src={answer.you_coder.photo}
+                        alt={answer.you_coder.name}
+                        className="h-14 w-14 rounded-[1.1rem] border-2 border-black object-cover shadow-[4px_4px_0_rgba(0,0,0,0.8)]"
+                    />
+                ) : (
+                    <div className="flex h-14 w-14 items-center justify-center rounded-[1.1rem] border-2 border-black bg-[linear-gradient(135deg,#29CFFF_0%,#25F2A0_58%,#FFD327_100%)] text-lg font-black text-black shadow-[4px_4px_0_rgba(0,0,0,0.8)]">
+                        {getInitials(answer.you_coder?.name)}
+                    </div>
+                )}
+
+                <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-bold text-[#FFF3DC]">
+                            {answer.you_coder?.name || 'YouConnect member'}
+                        </p>
+                        <span className="rounded-full border border-[rgb(var(--line))] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[rgb(var(--fg-muted))]">
+                            {answer.vote_count || 0} votes
+                        </span>
+                        {answer.is_accepted ? (
+                            <span className="rounded-full bg-[#25F2A0] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-black">
+                                Accepted
+                            </span>
+                        ) : null}
+                        {answer.is_highlighted ? (
+                            <span className="rounded-full bg-[#FFD327] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-black">
+                                Highlighted
+                            </span>
+                        ) : null}
+                    </div>
+
+                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#25F2A0]">
+                        {formatAnswerDate(answer.created_at)}
+                    </p>
+                </div>
             </div>
 
-            <p className="mt-4 text-sm leading-7 text-[rgb(var(--fg-muted))]">
+            <p className="mt-5 text-sm leading-7 text-[rgb(var(--fg-muted))]">
                 {answer.content}
             </p>
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-[rgb(var(--fg-muted))]">
-                    {formatAnswerDate(answer.created_at)}
-                </p>
-
                 {canVote ? (
                     <>
                         <button

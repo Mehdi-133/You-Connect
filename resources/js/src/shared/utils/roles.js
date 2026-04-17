@@ -58,3 +58,7 @@ export function canManageUsers(user) {
 export function canManageCommunity(user) {
     return isAdmin(user) || isFormateur(user) || isBdeMembre(user);
 }
+
+export function canModerateBlogs(user) {
+    return isAdmin(user) || isFormateur(user);
+}

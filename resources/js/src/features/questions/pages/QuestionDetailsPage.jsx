@@ -14,6 +14,18 @@ function getTagTone(index) {
     return tones[index % tones.length];
 }
 
+function getInitials(name) {
+    if (!name) {
+        return 'YC';
+    }
+
+    return name
+        .split(' ')
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase())
+        .join('');
+}
+
 function getQuestionStatusLabel(question, answers) {
     if (question?.status === 'closed') {
         return 'Closed';
@@ -107,12 +119,15 @@ export function QuestionDetailsPage() {
             }));
             setAnswerContent('');
         } catch (requestError) {
-            const message =
-                requestError.response?.data?.message ||
-                'We could not post your answer right now.';
+            const nextFieldErrors = requestError.response?.data?.errors || {};
 
-            setAnswerError(message);
-            setAnswerFieldErrors(requestError.response?.data?.errors || {});
+            setAnswerFieldErrors(nextFieldErrors);
+            setAnswerError(
+                Object.keys(nextFieldErrors).length
+                    ? ''
+                    : requestError.response?.data?.message ||
+                      'We could not post your answer right now.'
+            );
         } finally {
             setIsSubmittingAnswer(false);
         }
@@ -235,53 +250,99 @@ export function QuestionDetailsPage() {
         <div className="grid gap-6">
             <SectionCard
                 eyebrow="Question details"
-                title={question.title}
-                description="Read the full question, scan its tags, and review the answers that have been posted so far."
-                className="hero-gradient"
+                title=""
+                description=""
+                className="hero-gradient overflow-hidden"
             >
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-[radial-gradient(circle_at_top_left,rgba(255,102,214,0.16),transparent_24%),radial-gradient(circle_at_top_right,rgba(41,207,255,0.16),transparent_24%),radial-gradient(circle_at_40%_30%,rgba(255,211,39,0.12),transparent_28%)]" />
+
                 <div className="flex flex-wrap items-center gap-3">
                     <Link
                         to="/app/questions"
-                        className="festival-card rounded-full bg-[#FFF3DC] px-4 py-2 text-sm font-black uppercase tracking-[0.14em] text-black"
+                        className="festival-card rounded-full border-2 border-black bg-[#FFF3DC] px-4 py-2 text-sm font-black uppercase tracking-[0.14em] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)]"
                     >
                         Back to questions
                     </Link>
-                    <span className="rounded-full border border-[rgb(var(--line))] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[rgb(var(--fg-muted))]">
+                    <span className="rounded-full border-2 border-black bg-[#FFF3DC] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)]">
                         {answers.length} answers
                     </span>
-                    <span className="rounded-full border border-[rgb(var(--line))] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[rgb(var(--fg-muted))]">
+                    <span className="rounded-full border-2 border-black bg-[#FFD327] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)]">
                         {getQuestionStatusLabel(question, answers)}
                     </span>
                     {question.you_coder ? (
-                        <span className="rounded-full border border-[rgb(var(--line))] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[rgb(var(--fg-muted))]">
+                        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[rgb(var(--fg-muted))]">
                             {question.you_coder.name}
                         </span>
                     ) : null}
                 </div>
 
-                <p className="mt-6 max-w-4xl text-sm leading-8 text-[rgb(var(--fg-muted))]">
-                    {question.content}
-                </p>
+                <div className="relative mt-8 overflow-hidden rounded-[2.3rem] border-2 border-black bg-[linear-gradient(145deg,#FFF3DC_0%,#ffe7a6_100%)] p-8 text-black shadow-[8px_8px_0_rgba(0,0,0,0.85)]">
+                    <div className="absolute right-5 top-5 h-5 w-5 rounded-full bg-[#FF66D6]" />
+                    <div className="absolute right-12 top-10 h-3 w-3 rounded-full bg-[#29CFFF]" />
 
-                {question.tags?.length ? (
-                    <div className="mt-6 flex flex-wrap gap-2">
-                        {question.tags.map((tag, index) => (
-                            <span
-                                key={tag.id}
-                                className="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-black shadow-[3px_3px_0_rgba(0,0,0,0.8)]"
-                                style={{ backgroundColor: getTagTone(index) }}
-                            >
-                                {tag.name}
-                            </span>
-                        ))}
+                    <div className="flex items-start gap-4">
+                        {question.you_coder?.photo ? (
+                            <img
+                                src={question.you_coder.photo}
+                                alt={question.you_coder.name}
+                                className="h-16 w-16 rounded-[1.2rem] border-2 border-black object-cover shadow-[4px_4px_0_rgba(0,0,0,0.8)]"
+                            />
+                        ) : (
+                            <div className="flex h-16 w-16 items-center justify-center rounded-[1.2rem] border-2 border-black bg-[linear-gradient(135deg,#29CFFF_0%,#25F2A0_58%,#FFD327_100%)] text-xl font-black text-black shadow-[4px_4px_0_rgba(0,0,0,0.8)]">
+                                {getInitials(question.you_coder?.name)}
+                            </div>
+                        )}
+
+                        <div className="min-w-0 flex-1">
+                            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#7b5c3d]">
+                                YouConnect discussion
+                            </p>
+                            <p className="mt-2 text-base font-bold text-black">
+                                {question.you_coder?.name || 'YouConnect member'}
+                            </p>
+                            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#7b5c3d]">
+                                Community question
+                            </p>
+                        </div>
                     </div>
-                ) : null}
+
+                    <h1 className="mt-6 max-w-5xl font-display text-5xl font-extrabold leading-[0.95]">
+                        {question.title}
+                    </h1>
+
+                    <div className="mt-5 flex flex-wrap gap-3 text-sm font-bold text-[#4d4239]">
+                        <span className="rounded-full bg-black px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-[#FFF3DC]">
+                            {answers.length} answers
+                        </span>
+                        <span className="rounded-full bg-white/60 px-4 py-2">
+                            {getQuestionStatusLabel(question, answers)}
+                        </span>
+                    </div>
+
+                    <p className="mt-8 max-w-4xl text-base leading-9 text-[#3d332c]">
+                        {question.content}
+                    </p>
+
+                    {question.tags?.length ? (
+                        <div className="mt-6 flex flex-wrap gap-2">
+                            {question.tags.map((tag, index) => (
+                                <span
+                                    key={tag.id}
+                                    className="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-black shadow-[3px_3px_0_rgba(0,0,0,0.8)]"
+                                    style={{ backgroundColor: getTagTone(index) }}
+                                >
+                                    {tag.name}
+                                </span>
+                            ))}
+                        </div>
+                    ) : null}
+                </div>
 
                 {interactionError ? (
                     <p className="mt-6 text-sm font-bold text-[#FFD327]">{interactionError}</p>
                 ) : null}
 
-                <form onSubmit={handleCreateAnswer} className="mt-8 grid gap-4 rounded-[2rem] border border-white/10 bg-white/5 p-5">
+                <form onSubmit={handleCreateAnswer} className="mt-8 grid gap-4 rounded-[2rem] border border-white/10 bg-white/5 p-5 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
                     <div>
                         <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
                             Your answer

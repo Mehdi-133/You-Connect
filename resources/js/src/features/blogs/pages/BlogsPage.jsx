@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SectionCard } from '../../../shared/components/SectionCard';
+import { useAuth } from '../../../hooks/useAuth';
 import { EmptyState } from '../../../shared/ui/feedback/EmptyState';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
 import { LoadingState } from '../../../shared/ui/feedback/LoadingState';
-import { createBlog, getBlogs } from '../../../services/api/blogs.service';
+import { createBlog, getBlogs, likeBlog } from '../../../services/api/blogs.service';
 import { BlogFeedCard } from '../components/BlogFeedCard';
 
 export function BlogsPage() {
+    const { user } = useAuth();
     const [blogs, setBlogs] = useState([]);
     const [selectedFilter, setSelectedFilter] = useState('Featured');
     const [isLoading, setIsLoading] = useState(true);
@@ -19,6 +21,8 @@ export function BlogsPage() {
     const [fieldErrors, setFieldErrors] = useState({});
     const [successMessage, setSuccessMessage] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [likedBlogs, setLikedBlogs] = useState({});
+    const [processingBlogId, setProcessingBlogId] = useState(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -107,14 +111,53 @@ export function BlogsPage() {
             setSelectedFilter('Featured');
             setSuccessMessage('Blog created successfully.');
         } catch (requestError) {
-            const message =
-                requestError.response?.data?.message ||
-                'We could not create your blog right now.';
+            const nextFieldErrors = requestError.response?.data?.errors || {};
 
-            setFormError(message);
-            setFieldErrors(requestError.response?.data?.errors || {});
+            setFieldErrors(nextFieldErrors);
+            setFormError(
+                Object.keys(nextFieldErrors).length
+                    ? ''
+                    : requestError.response?.data?.message ||
+                      'We could not create your blog right now.'
+            );
         } finally {
             setIsSubmitting(false);
+        }
+    }
+
+    async function handleLikeBlog(blog) {
+        setSuccessMessage('');
+        setFormError('');
+        setProcessingBlogId(blog.id);
+
+        try {
+            const response = await likeBlog({ blog_id: blog.id });
+            const isRemovingLike = response.message === 'Like removed';
+
+            setBlogs((currentBlogs) =>
+                currentBlogs.map((item) =>
+                    item.id === blog.id
+                        ? {
+                            ...item,
+                            like_count: isRemovingLike
+                                ? Math.max(0, (item.like_count || 0) - 1)
+                                : (item.like_count || 0) + 1,
+                        }
+                        : item
+                )
+            );
+
+            setLikedBlogs((currentLikedBlogs) => ({
+                ...currentLikedBlogs,
+                [blog.id]: !isRemovingLike,
+            }));
+        } catch (requestError) {
+            setFormError(
+                requestError.response?.data?.message ||
+                'We could not update the like right now.'
+            );
+        } finally {
+            setProcessingBlogId(null);
         }
     }
 
@@ -153,11 +196,13 @@ export function BlogsPage() {
         <div className="grid gap-6">
             <SectionCard
                 eyebrow="Blogs"
-                title="Editorial feed with real backend data"
-                description="This feed now reads the real blog list from Laravel and lets you scan status, author, and engagement quickly."
-                className="hero-gradient"
+                title="Stories, lessons, and community momentum"
+                description="Your blog feed now feels closer to the rest of YouConnect: bold, layered, and still easy to read when the content gets serious."
+                className="hero-gradient overflow-hidden"
             >
-                <form onSubmit={handleCreateBlog} className="mb-6 grid gap-4 rounded-[2rem] border border-white/10 bg-white/5 p-5">
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top_left,rgba(255,102,214,0.16),transparent_26%),radial-gradient(circle_at_top_right,rgba(41,207,255,0.16),transparent_22%)]" />
+
+                <form onSubmit={handleCreateBlog} className="relative mb-6 grid gap-4 rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.07)_0%,rgba(255,255,255,0.03)_100%)] p-5 shadow-[6px_6px_0_rgba(0,0,0,0.85)]">
                     <div>
                         <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
                             Blog title
@@ -211,17 +256,17 @@ export function BlogsPage() {
                     </div>
                 </form>
 
-                <div className="flex flex-wrap gap-3">
+                <div className="relative flex flex-wrap gap-3">
                     {filterItems.map((item, index) => (
                         <button
                             key={item}
                             type="button"
                             onClick={() => setSelectedFilter(item)}
                             className={[
-                                'festival-card rounded-full px-4 py-2 text-sm font-black uppercase tracking-[0.14em]',
+                                'festival-card rounded-full px-4 py-2 text-sm font-black uppercase tracking-[0.14em] shadow-[4px_4px_0_rgba(0,0,0,0.85)]',
                                 selectedFilter === item || (index === 0 && selectedFilter === 'Featured')
-                                    ? 'bg-[#25F2A0] text-black'
-                                    : 'bg-white/70 text-black dark:bg-white/10 dark:text-[rgb(var(--fg))]',
+                                    ? 'border-2 border-black bg-[#25F2A0] text-black'
+                                    : 'border border-white/10 bg-white/70 text-black dark:bg-white/10 dark:text-[rgb(var(--fg))]',
                             ].join(' ')}
                         >
                             {item}
@@ -231,9 +276,17 @@ export function BlogsPage() {
             </SectionCard>
 
             {filteredBlogs.length ? (
-                <div className="grid gap-5 lg:grid-cols-2">
+                <div className="grid gap-5">
                     {filteredBlogs.map((blog) => (
-                        <BlogFeedCard key={blog.id} blog={blog} />
+                        <BlogFeedCard
+                            key={blog.id}
+                            blog={blog}
+                            canLike={Boolean(user && blog.you_coder?.id !== user.id)}
+                            hasLiked={Boolean(likedBlogs[blog.id])}
+                            isLiking={processingBlogId === blog.id}
+                            onLike={handleLikeBlog}
+                            isOwner={Boolean(user && blog.you_coder?.id === user.id)}
+                        />
                     ))}
                 </div>
             ) : (

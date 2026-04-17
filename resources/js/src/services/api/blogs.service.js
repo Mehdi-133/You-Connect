@@ -34,3 +34,8 @@ export async function rejectBlog(blogId) {
     const { data } = await apiClient.patch(`/blogs/${blogId}/reject`);
     return data;
 }
+
+export async function highlightBlog(blogId) {
+    const { data } = await apiClient.patch(`/blogs/${blogId}/highlight`);
+    return data;
+}
