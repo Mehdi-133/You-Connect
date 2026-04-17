@@ -41,17 +41,20 @@ export function AppLayout() {
                 </div>
 
                 <div className="mb-6 rounded-[24px] border border-white/10 bg-white/5 p-4 shadow-[4px_4px_0_rgba(0,0,0,0.8)]">
-                    <p className="text-xs font-black uppercase tracking-[0.22em] text-[#25F2A0]">Student mode</p>
+                    <p className="text-xs font-black uppercase tracking-[0.22em] text-[#25F2A0]">Workspace</p>
                     <p className="mt-2 text-sm leading-6 text-[#d8cfbd]">
                         Questions, blogs, notifications, and progress all in one vivid workspace.
                     </p>
                     {user ? (
-                        <p className="mt-3 text-sm font-semibold text-[#FFF3DC]">
-                            Signed in as {user.name}
-                        </p>
+                        <>
+                            <p className="mt-3 text-lg font-bold text-[#FFF3DC]">{user.name}</p>
+                            <p className="mt-1 text-sm text-[#d8cfbd]">
+                                {user.role ? `Role: ${user.role}` : 'Authenticated user'}
+                            </p>
+                        </>
                     ) : null}
                     <div className="mt-4 flex flex-wrap gap-2">
-                        {['XP +120', '3 badges', '2 reviews pending'].map((chip, index) => (
+                        {['Questions', 'Blogs', 'Chat'].map((chip, index) => (
                             <span
                                 key={chip}
                                 className={[
@@ -99,17 +102,37 @@ export function AppLayout() {
                 <header className="border-b border-white/10 bg-[#05020d]/70 px-6 py-4 backdrop-blur-md">
                     <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                         <div>
-                            <p className="text-sm font-black uppercase tracking-[0.24em] text-[#25F2A0]">Prototype</p>
-                            <h1 className="font-display text-4xl font-extrabold text-[#FFF3DC]">Frontend test environment</h1>
+                            <p className="text-sm font-black uppercase tracking-[0.24em] text-[#25F2A0]">YouConnect</p>
+                            <h1 className="font-display text-4xl font-extrabold text-[#FFF3DC]">Learning workspace</h1>
                         </div>
                         <div className="flex flex-wrap gap-3">
                             <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-[#d8cfbd] shadow-[4px_4px_0_rgba(0,0,0,0.8)]">
-                                Search and notification controls coming next
+                                API-connected frontend in progress
                             </div>
                             <div className="rounded-full bg-[linear-gradient(135deg,#A34DFF_0%,#29CFFF_45%,#25F2A0_80%,#FFD327_100%)] px-4 py-2 text-sm font-black uppercase tracking-[0.14em] text-black shadow-[4px_4px_0_rgba(0,0,0,0.8)]">
-                                React UI lab
+                                React app shell
                             </div>
                         </div>
+                    </div>
+
+                    <div className="mt-4 flex gap-3 overflow-x-auto lg:hidden">
+                        {navigationItems.map((item) => (
+                            <NavLink
+                                key={item.to}
+                                to={item.to}
+                                end={item.to === '/app'}
+                                className={({ isActive }) =>
+                                    [
+                                        'whitespace-nowrap rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.14em]',
+                                        isActive
+                                            ? 'bg-[#FFD327] text-black'
+                                            : 'border border-white/10 bg-white/5 text-[#d8cfbd]',
+                                    ].join(' ')
+                                }
+                            >
+                                {item.label}
+                            </NavLink>
+                        ))}
                     </div>
                 </header>
 
