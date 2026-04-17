@@ -4,7 +4,8 @@ import { SectionCard } from '../../../shared/components/SectionCard';
 import { EmptyState } from '../../../shared/ui/feedback/EmptyState';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
 import { LoadingState } from '../../../shared/ui/feedback/LoadingState';
-import { getBlog } from '../../../services/api/blogs.service';
+import { useAuth } from '../../../hooks/useAuth';
+import { getBlog, updateBlog } from '../../../services/api/blogs.service';
 
 function getStatusLabel(status, isHighlighted) {
     if (isHighlighted) {
@@ -27,10 +28,20 @@ function getStatusLabel(status, isHighlighted) {
 }
 
 export function BlogDetailsPage() {
+    const { user } = useAuth();
     const { blogId } = useParams();
     const [blog, setBlog] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [isEditing, setIsEditing] = useState(false);
+    const [editForm, setEditForm] = useState({
+        title: '',
+        content: '',
+    });
+    const [editError, setEditError] = useState('');
+    const [editFieldErrors, setEditFieldErrors] = useState({});
+    const [editSuccessMessage, setEditSuccessMessage] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -47,6 +58,10 @@ export function BlogDetailsPage() {
                 }
 
                 setBlog(response);
+                setEditForm({
+                    title: response.title || '',
+                    content: response.content || '',
+                });
             } catch (requestError) {
                 if (!isMounted) {
                     return;
@@ -69,6 +84,43 @@ export function BlogDetailsPage() {
             isMounted = false;
         };
     }, [blogId]);
+
+    function handleEditInputChange(event) {
+        const { name, value } = event.target;
+
+        setEditForm((currentForm) => ({
+            ...currentForm,
+            [name]: value,
+        }));
+    }
+
+    async function handleUpdateBlog(event) {
+        event.preventDefault();
+        setEditError('');
+        setEditFieldErrors({});
+        setEditSuccessMessage('');
+        setIsSaving(true);
+
+        try {
+            const updatedBlog = await updateBlog(blogId, editForm);
+
+            setBlog((currentBlog) => ({
+                ...currentBlog,
+                ...updatedBlog,
+            }));
+            setIsEditing(false);
+            setEditSuccessMessage('Blog updated successfully.');
+        } catch (requestError) {
+            const message =
+                requestError.response?.data?.message ||
+                'We could not update this blog right now.';
+
+            setEditError(message);
+            setEditFieldErrors(requestError.response?.data?.errors || {});
+        } finally {
+            setIsSaving(false);
+        }
+    }
 
     if (isLoading) {
         return (
@@ -101,6 +153,8 @@ export function BlogDetailsPage() {
         );
     }
 
+    const canEdit = user && blog.you_coder?.id === user.id;
+
     return (
         <div className="grid gap-6">
             <SectionCard
@@ -127,11 +181,79 @@ export function BlogDetailsPage() {
                             {blog.you_coder.name}
                         </span>
                     ) : null}
+                    {canEdit ? (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsEditing((currentState) => !currentState);
+                                setEditError('');
+                                setEditFieldErrors({});
+                                setEditSuccessMessage('');
+                            }}
+                            className="festival-card rounded-full bg-[#25F2A0] px-4 py-2 text-sm font-black uppercase tracking-[0.14em] text-black"
+                        >
+                            {isEditing ? 'Cancel edit' : 'Edit blog'}
+                        </button>
+                    ) : null}
                 </div>
 
-                <p className="mt-6 max-w-4xl text-sm leading-8 text-[rgb(var(--fg-muted))]">
-                    {blog.content}
-                </p>
+                {editSuccessMessage ? (
+                    <p className="mt-6 text-sm font-bold text-[#25F2A0]">{editSuccessMessage}</p>
+                ) : null}
+
+                {isEditing ? (
+                    <form onSubmit={handleUpdateBlog} className="mt-6 grid gap-4 rounded-[2rem] border border-white/10 bg-white/5 p-5">
+                        <div>
+                            <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                Blog title
+                            </label>
+                            <input
+                                type="text"
+                                name="title"
+                                value={editForm.title}
+                                onChange={handleEditInputChange}
+                                className="w-full rounded-[1.4rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
+                            />
+                            {editFieldErrors.title ? (
+                                <p className="mt-2 text-xs font-bold text-[#FFD327]">{editFieldErrors.title[0]}</p>
+                            ) : null}
+                        </div>
+
+                        <div>
+                            <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                Blog content
+                            </label>
+                            <textarea
+                                name="content"
+                                value={editForm.content}
+                                onChange={handleEditInputChange}
+                                rows="8"
+                                className="w-full rounded-[1.4rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
+                            />
+                            {editFieldErrors.content ? (
+                                <p className="mt-2 text-xs font-bold text-[#FFD327]">{editFieldErrors.content[0]}</p>
+                            ) : null}
+                        </div>
+
+                        {editError ? (
+                            <p className="text-sm font-bold text-[#FFD327]">{editError}</p>
+                        ) : null}
+
+                        <div>
+                            <button
+                                type="submit"
+                                disabled={isSaving}
+                                className="festival-card rounded-full bg-[#25F2A0] px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-black disabled:cursor-not-allowed disabled:opacity-70"
+                            >
+                                {isSaving ? 'Saving changes...' : 'Save changes'}
+                            </button>
+                        </div>
+                    </form>
+                ) : (
+                    <p className="mt-6 max-w-4xl text-sm leading-8 text-[rgb(var(--fg-muted))]">
+                        {blog.content}
+                    </p>
+                )}
             </SectionCard>
 
             {blog.comments?.length ? (

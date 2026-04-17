@@ -1,9 +1,9 @@
-import { SectionCard } from '../../../shared/components/SectionCard';
 import { useEffect, useMemo, useState } from 'react';
+import { SectionCard } from '../../../shared/components/SectionCard';
 import { EmptyState } from '../../../shared/ui/feedback/EmptyState';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
 import { LoadingState } from '../../../shared/ui/feedback/LoadingState';
-import { getBlogs } from '../../../services/api/blogs.service';
+import { createBlog, getBlogs } from '../../../services/api/blogs.service';
 import { BlogFeedCard } from '../components/BlogFeedCard';
 
 export function BlogsPage() {
@@ -11,6 +11,14 @@ export function BlogsPage() {
     const [selectedFilter, setSelectedFilter] = useState('Featured');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [form, setForm] = useState({
+        title: '',
+        content: '',
+    });
+    const [formError, setFormError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [successMessage, setSuccessMessage] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -72,6 +80,44 @@ export function BlogsPage() {
         return blogs;
     }, [blogs, selectedFilter]);
 
+    function handleInputChange(event) {
+        const { name, value } = event.target;
+
+        setForm((currentForm) => ({
+            ...currentForm,
+            [name]: value,
+        }));
+    }
+
+    async function handleCreateBlog(event) {
+        event.preventDefault();
+        setFormError('');
+        setFieldErrors({});
+        setSuccessMessage('');
+        setIsSubmitting(true);
+
+        try {
+            const createdBlog = await createBlog(form);
+
+            setBlogs((currentBlogs) => [createdBlog, ...currentBlogs]);
+            setForm({
+                title: '',
+                content: '',
+            });
+            setSelectedFilter('Featured');
+            setSuccessMessage('Blog created successfully.');
+        } catch (requestError) {
+            const message =
+                requestError.response?.data?.message ||
+                'We could not create your blog right now.';
+
+            setFormError(message);
+            setFieldErrors(requestError.response?.data?.errors || {});
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
     if (isLoading) {
         return (
             <LoadingState
@@ -111,6 +157,60 @@ export function BlogsPage() {
                 description="This feed now reads the real blog list from Laravel and lets you scan status, author, and engagement quickly."
                 className="hero-gradient"
             >
+                <form onSubmit={handleCreateBlog} className="mb-6 grid gap-4 rounded-[2rem] border border-white/10 bg-white/5 p-5">
+                    <div>
+                        <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                            Blog title
+                        </label>
+                        <input
+                            type="text"
+                            name="title"
+                            value={form.title}
+                            onChange={handleInputChange}
+                            placeholder="Share a lesson, tutorial, or community story"
+                            className="w-full rounded-[1.4rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
+                        />
+                        {fieldErrors.title ? (
+                            <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.title[0]}</p>
+                        ) : null}
+                    </div>
+
+                    <div>
+                        <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                            Blog content
+                        </label>
+                        <textarea
+                            name="content"
+                            value={form.content}
+                            onChange={handleInputChange}
+                            rows="6"
+                            placeholder="Write the full blog content here."
+                            className="w-full rounded-[1.4rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
+                        />
+                        {fieldErrors.content ? (
+                            <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.content[0]}</p>
+                        ) : null}
+                    </div>
+
+                    {formError ? (
+                        <p className="text-sm font-bold text-[#FFD327]">{formError}</p>
+                    ) : null}
+
+                    {successMessage ? (
+                        <p className="text-sm font-bold text-[#25F2A0]">{successMessage}</p>
+                    ) : null}
+
+                    <div>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="festival-card rounded-full bg-[#25F2A0] px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-black disabled:cursor-not-allowed disabled:opacity-70"
+                        >
+                            {isSubmitting ? 'Publishing blog...' : 'Create blog'}
+                        </button>
+                    </div>
+                </form>
+
                 <div className="flex flex-wrap gap-3">
                     {filterItems.map((item, index) => (
                         <button
