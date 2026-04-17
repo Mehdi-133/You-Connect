@@ -7,6 +7,7 @@ import { SignInPage } from '../features/auth/pages/SignInPage';
 import { SignUpPage } from '../features/auth/pages/SignUpPage';
 import { StudentDashboardPage } from '../features/dashboard/pages/StudentDashboardPage';
 import { QuestionsPage } from '../features/questions/pages/QuestionsPage';
+import { QuestionDetailsPage } from '../features/questions/pages/QuestionDetailsPage';
 import { BlogsPage } from '../features/blogs/pages/BlogsPage';
 import { NotificationsPage } from '../features/notifications/pages/NotificationsPage';
 import { ProfilePage } from '../features/profile/pages/ProfilePage';
@@ -38,6 +39,7 @@ export function AppRouter() {
             >
                 <Route path="/app" element={<StudentDashboardPage />} />
                 <Route path="/app/questions" element={<QuestionsPage />} />
+                <Route path="/app/questions/:questionId" element={<QuestionDetailsPage />} />
                 <Route path="/app/blogs" element={<BlogsPage />} />
                 <Route path="/app/notifications" element={<NotificationsPage />} />
                 <Route path="/app/profile" element={<ProfilePage />} />

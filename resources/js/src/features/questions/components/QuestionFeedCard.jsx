@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 function getStatusLabel(question) {
     if (question.status === 'closed') {
         return 'Closed';
@@ -37,6 +39,15 @@ export function QuestionFeedCard({ question }) {
             <p className="mt-3 max-w-3xl text-sm leading-7 text-[rgb(var(--fg-muted))]">
                 {question.content}
             </p>
+
+            <div className="mt-4">
+                <Link
+                    to={`/app/questions/${question.id}`}
+                    className="festival-card inline-flex rounded-full bg-[#FFF3DC] px-4 py-2 text-sm font-black uppercase tracking-[0.14em] text-black"
+                >
+                    View discussion
+                </Link>
+            </div>
 
             {question.tags?.length ? (
                 <div className="mt-4 flex flex-wrap gap-2">
