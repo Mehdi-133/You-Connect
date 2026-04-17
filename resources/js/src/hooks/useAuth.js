@@ -1,7 +1,5 @@
-export function useAuth() {
-    const token = localStorage.getItem('auth_token');
+import { useAuthContext } from '../app/providers/AuthProvider';
 
-    return {
-        isAuthenticated: Boolean(token),
-    };
+export function useAuth() {
+    return useAuthContext();
 }

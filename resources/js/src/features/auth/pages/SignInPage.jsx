@@ -1,3 +1,8 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { login } from '../../../services/api/auth.service';
+import { useAuth } from '../../../hooks/useAuth';
+
 function Spark({ className = '' }) {
     return (
         <div className={`pointer-events-none absolute ${className}`}>
@@ -39,6 +44,46 @@ function FestivalWordmark() {
 }
 
 export function SignInPage() {
+    const navigate = useNavigate();
+    const { signIn } = useAuth();
+    const [form, setForm] = useState({
+        email: '',
+        password: '',
+    });
+    const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    function handleChange(event) {
+        const { name, value } = event.target;
+
+        setForm((currentForm) => ({
+            ...currentForm,
+            [name]: value,
+        }));
+    }
+
+    async function handleSubmit(event) {
+        event.preventDefault();
+        setError('');
+        setIsSubmitting(true);
+
+        try {
+            const response = await login(form);
+
+            signIn(response);
+
+            navigate('/app', { replace: true });
+        } catch (requestError) {
+            const message =
+                requestError.response?.data?.message ||
+                'Unable to sign in right now. Please try again.';
+
+            setError(message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
     return (
         <div className="mx-auto flex min-h-screen max-w-7xl items-center px-6 py-12">
             <div className="grid w-full gap-8 lg:grid-cols-[1.1fr_0.9fr]">
@@ -81,16 +126,45 @@ export function SignInPage() {
                     </p>
                     <h1 className="relative mt-6 font-display text-6xl font-extrabold leading-none text-[#FFF3DC]">Welcome back</h1>
                     <p className="relative mt-4 max-w-lg text-base leading-8 text-[rgb(var(--fg-muted))]">
-                        Sign in to continue testing the real UI shell before we wire it to Laravel Sanctum.
+                        Sign in to continue into your YouConnect workspace.
                     </p>
 
-                    <div className="relative mt-10 grid gap-4">
-                        <input className="festival-card rounded-[1.7rem] border border-[rgb(var(--line))] bg-[rgb(var(--bg-panel))] px-5 py-4 text-lg outline-none placeholder:text-[rgb(var(--fg-muted))]" placeholder="Email" />
-                        <input className="festival-card rounded-[1.7rem] border border-[rgb(var(--line))] bg-[rgb(var(--bg-panel))] px-5 py-4 text-lg outline-none placeholder:text-[rgb(var(--fg-muted))]" placeholder="Password" type="password" />
-                        <button className="festival-card rounded-[1.8rem] border-2 border-black bg-[linear-gradient(90deg,#8B5CF6_0%,#29CFFF_34%,#25F2A0_70%,#D9F542_100%)] px-5 py-4 font-black uppercase tracking-[0.24em] text-black">
-                            Continue
+                    <form onSubmit={handleSubmit} className="relative mt-10 grid gap-4">
+                        <input
+                            name="email"
+                            value={form.email}
+                            onChange={handleChange}
+                            className="festival-card rounded-[1.7rem] border border-[rgb(var(--line))] bg-[rgb(var(--bg-panel))] px-5 py-4 text-lg outline-none placeholder:text-[rgb(var(--fg-muted))]"
+                            placeholder="Email"
+                            type="email"
+                            autoComplete="email"
+                            required
+                        />
+                        <input
+                            name="password"
+                            value={form.password}
+                            onChange={handleChange}
+                            className="festival-card rounded-[1.7rem] border border-[rgb(var(--line))] bg-[rgb(var(--bg-panel))] px-5 py-4 text-lg outline-none placeholder:text-[rgb(var(--fg-muted))]"
+                            placeholder="Password"
+                            type="password"
+                            autoComplete="current-password"
+                            required
+                        />
+
+                        {error ? (
+                            <p className="rounded-[1.4rem] border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-200">
+                                {error}
+                            </p>
+                        ) : null}
+
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="festival-card rounded-[1.8rem] border-2 border-black bg-[linear-gradient(90deg,#8B5CF6_0%,#29CFFF_34%,#25F2A0_70%,#D9F542_100%)] px-5 py-4 font-black uppercase tracking-[0.24em] text-black disabled:cursor-not-allowed disabled:opacity-70"
+                        >
+                            {isSubmitting ? 'Signing in...' : 'Continue'}
                         </button>
-                    </div>
+                    </form>
 
                     <div className="mt-8 flex flex-wrap gap-3 text-xs font-bold uppercase tracking-[0.16em] text-[rgb(var(--fg-muted))]">
                         <span className="rounded-full border border-[rgb(var(--line))] bg-white/5 px-4 py-2">Student access</span>

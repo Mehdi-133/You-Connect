@@ -1,5 +1,8 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { useState } from 'react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { YouConnectLogo } from '../components/YouConnectLogo';
+import { logout } from '../../services/api/auth.service';
+import { useAuth } from '../../hooks/useAuth';
 
 const navigationItems = [
     { to: '/app', label: 'Dashboard' },
@@ -10,6 +13,24 @@ const navigationItems = [
 ];
 
 export function AppLayout() {
+    const navigate = useNavigate();
+    const { signOut, user } = useAuth();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    async function handleLogout() {
+        setIsLoggingOut(true);
+
+        try {
+            await logout();
+        } catch {
+            // Even if the backend request fails, we still clear the local session.
+        } finally {
+            signOut();
+            navigate('/sign-in', { replace: true });
+            setIsLoggingOut(false);
+        }
+    }
+
     return (
         <div className="min-h-screen bg-[#05020d] text-white lg:grid lg:grid-cols-[290px_1fr]">
             <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(163,77,255,0.22),transparent_22%),radial-gradient(circle_at_20%_35%,rgba(37,242,160,0.12),transparent_18%),radial-gradient(circle_at_80%_20%,rgba(255,102,214,0.12),transparent_16%)]" />
@@ -24,6 +45,11 @@ export function AppLayout() {
                     <p className="mt-2 text-sm leading-6 text-[#d8cfbd]">
                         Questions, blogs, notifications, and progress all in one vivid workspace.
                     </p>
+                    {user ? (
+                        <p className="mt-3 text-sm font-semibold text-[#FFF3DC]">
+                            Signed in as {user.name}
+                        </p>
+                    ) : null}
                     <div className="mt-4 flex flex-wrap gap-2">
                         {['XP +120', '3 badges', '2 reviews pending'].map((chip, index) => (
                             <span
@@ -58,6 +84,15 @@ export function AppLayout() {
                         </NavLink>
                     ))}
                 </nav>
+
+                <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="mt-6 w-full rounded-[1.4rem] border border-white/10 bg-white/5 px-4 py-3 text-sm font-black uppercase tracking-[0.12em] text-[#d8cfbd] shadow-[4px_4px_0_rgba(0,0,0,0.8)] transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                    {isLoggingOut ? 'Logging out...' : 'Logout'}
+                </button>
             </aside>
 
             <div className="relative min-h-screen">

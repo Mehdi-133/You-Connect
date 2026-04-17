@@ -4,13 +4,16 @@ import { BrowserRouter } from 'react-router-dom';
 import '../css/app.css';
 import { AppRouter } from './src/router/AppRouter';
 import { ThemeProvider } from './src/theme/ThemeProvider';
+import { AuthProvider } from './src/app/providers/AuthProvider';
 
 function App() {
     return (
         <ThemeProvider>
-            <BrowserRouter>
-                <AppRouter />
-            </BrowserRouter>
+            <AuthProvider>
+                <BrowserRouter>
+                    <AppRouter />
+                </BrowserRouter>
+            </AuthProvider>
         </ThemeProvider>
     );
 }
