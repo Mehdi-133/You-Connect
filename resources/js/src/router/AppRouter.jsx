@@ -9,6 +9,7 @@ import { StudentDashboardPage } from '../features/dashboard/pages/StudentDashboa
 import { QuestionsPage } from '../features/questions/pages/QuestionsPage';
 import { QuestionDetailsPage } from '../features/questions/pages/QuestionDetailsPage';
 import { BlogsPage } from '../features/blogs/pages/BlogsPage';
+import { BlogDetailsPage } from '../features/blogs/pages/BlogDetailsPage';
 import { NotificationsPage } from '../features/notifications/pages/NotificationsPage';
 import { ProfilePage } from '../features/profile/pages/ProfilePage';
 import { ProtectedRoute } from './ProtectedRoute';
@@ -41,6 +42,7 @@ export function AppRouter() {
                 <Route path="/app/questions" element={<QuestionsPage />} />
                 <Route path="/app/questions/:questionId" element={<QuestionDetailsPage />} />
                 <Route path="/app/blogs" element={<BlogsPage />} />
+                <Route path="/app/blogs/:blogId" element={<BlogDetailsPage />} />
                 <Route path="/app/notifications" element={<NotificationsPage />} />
                 <Route path="/app/profile" element={<ProfilePage />} />
             </Route>
