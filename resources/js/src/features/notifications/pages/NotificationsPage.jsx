@@ -65,16 +65,24 @@ function getToneClasses(type, isRead) {
 function getNotificationLink(notification) {
     const data = notification?.data || {};
 
-    if (data.slug) {
-        return `/app/blogs/${data.slug}`;
-    }
-
     if (data.question_id) {
         return `/app/questions/${data.question_id}`;
     }
 
     if (data.blog_id) {
-        return '/app/blogs';
+        return `/app/blogs/${data.blog_id}`;
+    }
+
+    if (data.commentable_type === 'question' && data.commentable_id) {
+        return `/app/questions/${data.commentable_id}`;
+    }
+
+    if (data.commentable_type === 'answer' && data.commentable_id) {
+        return '/app/questions';
+    }
+
+    if (data.commentable_type === 'blog' && data.commentable_id) {
+        return `/app/blogs/${data.commentable_id}`;
     }
 
     if (notification?.type === 'badge') {

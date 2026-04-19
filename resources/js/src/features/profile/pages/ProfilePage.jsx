@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SectionCard } from '../../../shared/components/SectionCard';
 import { useAuth } from '../../../hooks/useAuth';
-import { getUser, getUserScore } from '../../../services/api/users.service';
+import { getUser, getUserScore, updateUser } from '../../../services/api/users.service';
 import { getRoleLabel } from '../../../shared/utils/roles';
 import { EmptyState } from '../../../shared/ui/feedback/EmptyState';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
@@ -63,12 +63,26 @@ function getProfileHighlights(profile, reputation) {
     ];
 }
 
+function getFieldValue(form, key) {
+    return form[key] || '';
+}
+
 export function ProfilePage() {
-    const { user } = useAuth();
+    const { user, updateCurrentUser } = useAuth();
     const [profile, setProfile] = useState(null);
     const [score, setScore] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [form, setForm] = useState({
+        name: '',
+        bio: '',
+        class: '',
+        photo: '',
+    });
+    const [formError, setFormError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [successMessage, setSuccessMessage] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -93,6 +107,12 @@ export function ProfilePage() {
 
                 setProfile(profileResponse);
                 setScore(scoreResponse.reputation);
+                setForm({
+                    name: profileResponse.name || '',
+                    bio: profileResponse.bio || '',
+                    class: profileResponse.class || '',
+                    photo: profileResponse.photo || '',
+                });
             } catch (requestError) {
                 if (!isMounted) {
                     return;
@@ -120,6 +140,72 @@ export function ProfilePage() {
         () => getProfileHighlights(profile, score),
         [profile, score]
     );
+
+    function handleInputChange(event) {
+        const { name, value } = event.target;
+
+        setForm((currentForm) => ({
+            ...currentForm,
+            [name]: value,
+        }));
+    }
+
+    async function handleSaveProfile(event) {
+        event.preventDefault();
+        setFormError('');
+        setFieldErrors({});
+        setSuccessMessage('');
+        setIsSaving(true);
+
+        const payload = {
+            name: form.name.trim(),
+            bio: form.bio.trim(),
+            class: form.class || null,
+            photo: form.photo.trim(),
+        };
+
+        if (!payload.class) {
+            delete payload.class;
+        }
+
+        if (!payload.photo) {
+            delete payload.photo;
+        }
+
+        try {
+            const updatedProfile = await updateUser(user.id, payload);
+
+            setProfile((currentProfile) => ({
+                ...currentProfile,
+                ...updatedProfile,
+            }));
+            updateCurrentUser?.({
+                name: updatedProfile.name,
+                bio: updatedProfile.bio,
+                class: updatedProfile.class,
+                photo: updatedProfile.photo,
+            });
+            setForm({
+                name: updatedProfile.name || '',
+                bio: updatedProfile.bio || '',
+                class: updatedProfile.class || '',
+                photo: updatedProfile.photo || '',
+            });
+            setSuccessMessage('Profile updated successfully.');
+        } catch (requestError) {
+            const nextFieldErrors = requestError.response?.data?.errors || {};
+
+            setFieldErrors(nextFieldErrors);
+            setFormError(
+                Object.keys(nextFieldErrors).length
+                    ? ''
+                    : requestError.response?.data?.message ||
+                      'We could not update your profile right now.'
+            );
+        } finally {
+            setIsSaving(false);
+        }
+    }
 
     if (isLoading) {
         return (
@@ -159,14 +245,14 @@ export function ProfilePage() {
         <div className="grid gap-6">
             <SectionCard
                 eyebrow="Profile"
-                title="Your learning identity"
-                description="This view now reflects the real logged-in user instead of a placeholder mock card."
+                title="Your learning profile"
+                description="Review your account details, keep your introduction sharp, and make your profile feel ready for classmates, mentors, and collaborators."
                 className="hero-gradient overflow-hidden"
             >
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top_left,rgba(41,207,255,0.16),transparent_26%),radial-gradient(circle_at_top_right,rgba(37,242,160,0.16),transparent_26%)]" />
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-[radial-gradient(circle_at_top_left,rgba(41,207,255,0.18),transparent_26%),radial-gradient(circle_at_top_right,rgba(37,242,160,0.16),transparent_26%),radial-gradient(circle_at_50%_0%,rgba(255,211,39,0.12),transparent_30%)]" />
 
-                <div className="relative grid gap-6 lg:grid-cols-[340px_1fr]">
-                    <div className="festival-card rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(11,1,38,0.94)_0%,rgba(18,7,49,0.92)_100%)] p-6 text-[#FFF3DC] shadow-[6px_6px_0_rgba(0,0,0,0.85)]">
+                <div className="relative grid gap-6 xl:grid-cols-[360px_1fr]">
+                    <div className="festival-card rounded-[2.2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(11,1,38,0.96)_0%,rgba(16,8,43,0.94)_100%)] p-6 text-[#FFF3DC] shadow-[6px_6px_0_rgba(0,0,0,0.85)]">
                         <div className="flex items-start gap-4">
                             {profile.photo ? (
                                 <img
@@ -198,27 +284,29 @@ export function ProfilePage() {
                             </div>
                         </div>
 
-                        <div className="mt-6 space-y-3 text-sm text-[#d8cfbd]">
-                            <div className="rounded-[1.2rem] bg-white/5 px-4 py-3">
+                        <div className="mt-6 grid gap-3 text-sm text-[#d8cfbd]">
+                            <div className="rounded-[1.3rem] border border-white/10 bg-white/5 px-4 py-3">
                                 <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#25F2A0]">
-                                    Class
+                                    Profile snapshot
                                 </p>
-                                <p className="mt-1 font-semibold text-[#FFF3DC]">
-                                    {profile.class || 'Not specified yet'}
-                                </p>
-                            </div>
-
-                            <div className="rounded-[1.2rem] bg-white/5 px-4 py-3">
-                                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#25F2A0]">
-                                    Last activity
-                                </p>
-                                <p className="mt-1 font-semibold text-[#FFF3DC]">
-                                    {formatLastSeen(profile.last_seen)}
-                                </p>
+                                <div className="mt-3 grid gap-3">
+                                    <div>
+                                        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#9be7c4]">Class</p>
+                                        <p className="mt-1 font-semibold text-[#FFF3DC]">
+                                            {profile.class || 'Not specified yet'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#9be7c4]">Last activity</p>
+                                        <p className="mt-1 font-semibold text-[#FFF3DC]">
+                                            {formatLastSeen(profile.last_seen)}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                        <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.03)_100%)] p-4">
                             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#25F2A0]">
                                 Bio
                             </p>
@@ -240,6 +328,139 @@ export function ProfilePage() {
                                     </p>
                                 </div>
                             ))}
+                        </div>
+
+                        <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+                            <form
+                                onSubmit={handleSaveProfile}
+                                className="surface festival-card rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07)_0%,rgba(255,255,255,0.03)_100%)] p-6 shadow-[5px_5px_0_rgba(0,0,0,0.8)]"
+                            >
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                    <div>
+                                        <p className="text-xs font-black uppercase tracking-[0.22em] text-[#25F2A0]">
+                                            Edit profile
+                                        </p>
+                                        <h3 className="mt-3 font-display text-3xl font-extrabold leading-none">
+                                            Keep your profile sharp
+                                        </h3>
+                                    </div>
+                                    <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#d8cfbd]">
+                                        Live account settings
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                                    <div className="md:col-span-2">
+                                        <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                            Display name
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            value={getFieldValue(form, 'name')}
+                                            onChange={handleInputChange}
+                                            placeholder="Your public profile name"
+                                            className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
+                                        />
+                                        {fieldErrors.name ? (
+                                            <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.name[0]}</p>
+                                        ) : null}
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                            Class
+                                        </label>
+                                        <select
+                                            name="class"
+                                            value={getFieldValue(form, 'class')}
+                                            onChange={handleInputChange}
+                                            className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
+                                        >
+                                            <option value="">Choose your class</option>
+                                            <option value="dev room">Dev room</option>
+                                            <option value="dar hamza">Dar Hamza</option>
+                                        </select>
+                                        {fieldErrors.class ? (
+                                            <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.class[0]}</p>
+                                        ) : null}
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                            Photo URL
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="photo"
+                                            value={getFieldValue(form, 'photo')}
+                                            onChange={handleInputChange}
+                                            placeholder="https://example.com/profile.jpg"
+                                            className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
+                                        />
+                                        {fieldErrors.photo ? (
+                                            <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.photo[0]}</p>
+                                        ) : null}
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                            Bio
+                                        </label>
+                                        <textarea
+                                            name="bio"
+                                            value={getFieldValue(form, 'bio')}
+                                            onChange={handleInputChange}
+                                            rows="5"
+                                            placeholder="Share what you are learning, building, or helping with in the community."
+                                            className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
+                                        />
+                                        {fieldErrors.bio ? (
+                                            <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.bio[0]}</p>
+                                        ) : null}
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
+                                    <div>
+                                        {formError ? (
+                                            <p className="text-sm font-bold text-[#FFD327]">{formError}</p>
+                                        ) : null}
+                                        {successMessage ? (
+                                            <p className="text-sm font-bold text-[#25F2A0]">{successMessage}</p>
+                                        ) : null}
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={isSaving}
+                                        className="festival-card rounded-full bg-[#25F2A0] px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-black disabled:cursor-not-allowed disabled:opacity-70"
+                                    >
+                                        {isSaving ? 'Saving...' : 'Save profile'}
+                                    </button>
+                                </div>
+                            </form>
+
+                            <div className="surface festival-card rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07)_0%,rgba(255,255,255,0.03)_100%)] p-6 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
+                                <p className="text-xs font-black uppercase tracking-[0.22em] text-[#25F2A0]">
+                                    Profile guidance
+                                </p>
+                                <h3 className="mt-3 font-display text-3xl font-extrabold leading-none">
+                                    What makes this page feel complete
+                                </h3>
+
+                                <div className="mt-6 grid gap-3">
+                                    {[
+                                        ['Name', 'Use the same identity your classmates and mentors recognize.'],
+                                        ['Bio', 'Explain what you are learning and what kind of help or collaboration you enjoy.'],
+                                        ['Photo', 'A photo URL makes your profile feel more human across questions, blogs, and notifications.'],
+                                    ].map(([label, copy]) => (
+                                        <div key={label} className="rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3">
+                                            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#FFD327]">{label}</p>
+                                            <p className="mt-2 text-sm leading-7 text-[#d8cfbd]">{copy}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
 
                         <div className="grid gap-4 md:grid-cols-2">

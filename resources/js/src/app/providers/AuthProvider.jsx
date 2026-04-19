@@ -2,6 +2,10 @@ import { createContext, useContext, useMemo, useState } from 'react';
 
 const AuthContext = createContext(null);
 
+function storeUser(user) {
+    localStorage.setItem('auth_user', JSON.stringify(user));
+}
+
 function getStoredUser() {
     const rawUser = localStorage.getItem('auth_user');
 
@@ -23,10 +27,27 @@ export function AuthProvider({ children }) {
 
     function signIn(session) {
         localStorage.setItem('auth_token', session.token);
-        localStorage.setItem('auth_user', JSON.stringify(session.user));
+        storeUser(session.user);
 
         setToken(session.token);
         setUser(session.user);
+    }
+
+    function updateCurrentUser(updates) {
+        setUser((currentUser) => {
+            if (!currentUser) {
+                return currentUser;
+            }
+
+            const nextUser = {
+                ...currentUser,
+                ...updates,
+            };
+
+            storeUser(nextUser);
+
+            return nextUser;
+        });
     }
 
     function signOut() {
@@ -43,6 +64,7 @@ export function AuthProvider({ children }) {
         isAuthenticated: Boolean(token && user),
         signIn,
         signOut,
+        updateCurrentUser,
     }), [token, user]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
