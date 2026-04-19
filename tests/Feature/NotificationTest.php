@@ -69,6 +69,54 @@ class NotificationTest extends TestCase
         ]);
     }
 
+    public function test_user_can_list_only_their_notifications_with_actor_data(): void
+    {
+        $recipient = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $actor = User::factory()->create([
+            'name' => 'Actor User',
+        ]);
+
+        Notification::factory()->create([
+            'you_coder_id' => $recipient->id,
+            'actor_id' => $actor->id,
+            'title' => 'Visible notification',
+        ]);
+
+        Notification::factory()->create([
+            'you_coder_id' => $otherUser->id,
+            'actor_id' => $actor->id,
+            'title' => 'Hidden notification',
+        ]);
+
+        $response = $this->actingAs($recipient, 'sanctum')->getJson('/api/notifications');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'Visible notification')
+            ->assertJsonPath('data.0.actor.name', 'Actor User');
+    }
+
+    public function test_user_can_mark_all_notifications_as_read(): void
+    {
+        $recipient = User::factory()->create();
+
+        Notification::factory()->count(2)->create([
+            'you_coder_id' => $recipient->id,
+            'is_read' => false,
+        ]);
+
+        $response = $this->actingAs($recipient, 'sanctum')->patchJson('/api/notifications/read-all');
+
+        $response->assertOk()
+            ->assertJsonPath('message', 'All notifications marked as read');
+
+        $this->assertDatabaseMissing('notifications', [
+            'you_coder_id' => $recipient->id,
+            'is_read' => false,
+        ]);
+    }
+
     public function test_blog_like(): void
     {
         $blogOwner = User::factory()->create();

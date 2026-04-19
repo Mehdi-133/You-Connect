@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { YouConnectLogo } from '../components/YouConnectLogo';
 import { logout } from '../../services/api/auth.service';
 import { useAuth } from '../../hooks/useAuth';
+import { getNotifications } from '../../services/api/notifications.service';
 import {
     getRoleLabel,
     isAdmin,
@@ -10,11 +11,17 @@ import {
     isFormateur,
 } from '../utils/roles';
 
-function getNavigationItems(user) {
+function getNavigationItems(user, unreadNotificationsCount) {
+    const notificationItem = {
+        to: '/app/notifications',
+        label: 'Notifications',
+        badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : null,
+    };
+
     if (isAdmin(user)) {
         return [
             { to: '/app', label: 'Dashboard' },
-            { to: '/app/notifications', label: 'Notifications' },
+            notificationItem,
             { to: '/app/blogs', label: 'Blogs' },
             { to: '/app/questions', label: 'Questions' },
             { to: '/app/profile', label: 'Profile' },
@@ -26,7 +33,7 @@ function getNavigationItems(user) {
             { to: '/app', label: 'Dashboard' },
             { to: '/app/blogs', label: 'Blogs' },
             { to: '/app/questions', label: 'Questions' },
-            { to: '/app/notifications', label: 'Notifications' },
+            notificationItem,
             { to: '/app/profile', label: 'Profile' },
         ];
     }
@@ -35,7 +42,7 @@ function getNavigationItems(user) {
         return [
             { to: '/app', label: 'Dashboard' },
             { to: '/app/blogs', label: 'Blogs' },
-            { to: '/app/notifications', label: 'Notifications' },
+            notificationItem,
             { to: '/app/questions', label: 'Questions' },
             { to: '/app/profile', label: 'Profile' },
         ];
@@ -45,7 +52,7 @@ function getNavigationItems(user) {
         { to: '/app', label: 'Dashboard' },
         { to: '/app/questions', label: 'Questions' },
         { to: '/app/blogs', label: 'Blogs' },
-        { to: '/app/notifications', label: 'Notifications' },
+        notificationItem,
         { to: '/app/profile', label: 'Profile' },
     ];
 }
@@ -54,7 +61,41 @@ export function AppLayout() {
     const navigate = useNavigate();
     const { signOut, user } = useAuth();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
-    const navigationItems = getNavigationItems(user);
+    const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+    const navigationItems = getNavigationItems(user, unreadNotificationsCount);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        async function loadUnreadNotificationsCount() {
+            if (!user?.id) {
+                setUnreadNotificationsCount(0);
+                return;
+            }
+
+            try {
+                const response = await getNotifications();
+
+                if (!isMounted) {
+                    return;
+                }
+
+                setUnreadNotificationsCount(response?.unread_count || 0);
+            } catch {
+                if (!isMounted) {
+                    return;
+                }
+
+                setUnreadNotificationsCount(0);
+            }
+        }
+
+        loadUnreadNotificationsCount();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [user]);
 
     async function handleLogout() {
         setIsLoggingOut(true);
@@ -120,7 +161,14 @@ export function AppLayout() {
                                 ].join(' ')
                             }
                         >
-                            {item.label}
+                            <span className="flex items-center justify-between gap-3">
+                                <span>{item.label}</span>
+                                {item.badge ? (
+                                    <span className="inline-flex min-w-8 items-center justify-center rounded-[0.6rem] border border-black/20 bg-[#1E2234] px-2 py-1 text-[11px] font-black leading-none text-[#FFF3DC] shadow-[2px_2px_0_rgba(0,0,0,0.45)]">
+                                        {item.badge}
+                                    </span>
+                                ) : null}
+                            </span>
                         </NavLink>
                     ))}
                 </nav>
@@ -167,14 +215,21 @@ export function AppLayout() {
                                     ].join(' ')
                                 }
                             >
-                                {item.label}
+                                <span className="flex items-center gap-2">
+                                    <span>{item.label}</span>
+                                    {item.badge ? (
+                                        <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[#1E2234] px-2 py-1 text-[10px] font-black leading-none text-[#FFF3DC]">
+                                            {item.badge}
+                                        </span>
+                                    ) : null}
+                                </span>
                             </NavLink>
                         ))}
                     </div>
                 </header>
 
                 <main className="relative px-6 py-8">
-                    <Outlet />
+                    <Outlet context={{ setUnreadNotificationsCount }} />
                 </main>
             </div>
         </div>

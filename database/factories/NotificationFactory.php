@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\NotificationType;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,7 +19,13 @@ class NotificationFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'you_coder_id' => User::factory(),
+            'actor_id' => User::factory(),
+            'title' => fake()->sentence(3),
+            'type' => NotificationType::Answer,
+            'content' => fake()->sentence(),
+            'data' => [],
+            'is_read' => false,
         ];
     }
 }
