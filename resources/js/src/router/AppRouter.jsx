@@ -12,6 +12,8 @@ import { BlogsPage } from '../features/blogs/pages/BlogsPage';
 import { BlogDetailsPage } from '../features/blogs/pages/BlogDetailsPage';
 import { ClubsPage } from '../features/clubs/pages/ClubsPage';
 import { ClubDetailsPage } from '../features/clubs/pages/ClubDetailsPage';
+import { EventsPage } from '../features/events/pages/EventsPage';
+import { EventDetailsPage } from '../features/events/pages/EventDetailsPage';
 import { NotificationsPage } from '../features/notifications/pages/NotificationsPage';
 import { ProfilePage } from '../features/profile/pages/ProfilePage';
 import { BadgeInterestAdminPage } from '../features/admin/pages/BadgeInterestAdminPage';
@@ -49,11 +51,13 @@ export function AppRouter() {
                 <Route path="/app/blogs/:blogId" element={<BlogDetailsPage />} />
                 <Route path="/app/clubs" element={<ClubsPage />} />
                 <Route path="/app/clubs/:clubId" element={<ClubDetailsPage />} />
+                <Route path="/app/events" element={<EventsPage />} />
+                <Route path="/app/events/:eventId" element={<EventDetailsPage />} />
                 <Route path="/app/notifications" element={<NotificationsPage />} />
                 <Route path="/app/profile" element={<ProfilePage />} />
                 <Route
                     path="/app/admin/badges-interests"
-                    element={(
+                    element={( 
                         <ProtectedRoute isAllowed={isAdmin(user)}>
                             <BadgeInterestAdminPage />
                         </ProtectedRoute>

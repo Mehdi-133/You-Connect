@@ -19,6 +19,7 @@ function getPrimaryNavigationItems() {
         { to: '/app/questions', label: 'Questions' },
         { to: '/app/blogs', label: 'Blogs' },
         { to: '/app/clubs', label: 'Clubs' },
+        { to: '/app/events', label: 'Events' },
     ];
 }
 

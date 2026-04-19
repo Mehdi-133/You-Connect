@@ -12,7 +12,10 @@ class IventsController extends Controller
     public function index()
     {
         $this->authorize('viewAny', Ivents::class);
-        return Ivents::with('creator:id,name,photo')->latest()->paginate(10);
+        return Ivents::with('creator:id,name,photo')
+            ->withCount('attendees')
+            ->latest()
+            ->paginate(10);
     }
 
     public function store(StoreIventsRequest $request)
@@ -34,7 +37,8 @@ class IventsController extends Controller
     public function show(Ivents $ivent)
     {
         $this->authorize('view', $ivent);
-        return $ivent->load(['creator:id,name,photo', 'attendees:id,name,photo']);
+        return $ivent->load(['creator:id,name,photo', 'attendees:id,name,photo,bio'])
+            ->loadCount('attendees');
     }
 
     public function update(UpdateIventsRequest $request, Ivents $ivent)
