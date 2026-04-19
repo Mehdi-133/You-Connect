@@ -13,18 +13,7 @@ import { getRoleLabel } from '../../../shared/utils/roles';
 import { EmptyState } from '../../../shared/ui/feedback/EmptyState';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
 import { LoadingState } from '../../../shared/ui/feedback/LoadingState';
-
-function getInitials(name) {
-    if (!name) {
-        return 'YC';
-    }
-
-    return name
-        .split(' ')
-        .slice(0, 2)
-        .map((part) => part[0]?.toUpperCase())
-        .join('');
-}
+import { UserAvatar } from '../../../shared/components/UserAvatar';
 
 function getStatusLabel(status) {
     if (!status) {
@@ -383,8 +372,6 @@ export function ProfilePage() {
     }
 
     const roleLabel = getRoleLabel(profile);
-    const avatarFallback = getInitials(profile.name);
-
     return (
         <div className="grid gap-6">
             <SectionCard
@@ -398,17 +385,11 @@ export function ProfilePage() {
                 <div className="relative grid gap-6 xl:grid-cols-[360px_1fr]">
                     <div className="festival-card rounded-[2.2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(11,1,38,0.96)_0%,rgba(16,8,43,0.94)_100%)] p-6 text-[#FFF3DC] shadow-[6px_6px_0_rgba(0,0,0,0.85)]">
                         <div className="flex items-start gap-4">
-                            {profile.photo ? (
-                                <img
-                                    src={profile.photo}
-                                    alt={profile.name}
-                                    className="h-24 w-24 rounded-[1.6rem] border-2 border-black object-cover shadow-[5px_5px_0_rgba(0,0,0,0.85)]"
-                                />
-                            ) : (
-                                <div className="flex h-24 w-24 items-center justify-center rounded-[1.6rem] border-2 border-black bg-[linear-gradient(135deg,#29CFFF_0%,#25F2A0_58%,#FFD327_100%)] text-3xl font-black text-black shadow-[5px_5px_0_rgba(0,0,0,0.85)]">
-                                    {avatarFallback}
-                                </div>
-                            )}
+                            <UserAvatar
+                                name={profile.name}
+                                photo={profile.photo}
+                                size="xl"
+                            />
 
                             <div className="min-w-0 flex-1">
                                 <h3 className="font-display text-3xl font-extrabold leading-none">

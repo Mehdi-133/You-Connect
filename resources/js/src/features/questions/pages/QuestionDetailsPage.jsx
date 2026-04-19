@@ -8,22 +8,11 @@ import { useAuth } from '../../../hooks/useAuth';
 import { isFormateur } from '../../../shared/utils/roles';
 import { acceptAnswer, createAnswer, getQuestion, getQuestionAnswers, voteAnswer } from '../../../services/api/questions.service';
 import { QuestionAnswerCard } from '../components/QuestionAnswerCard';
+import { UserAvatar } from '../../../shared/components/UserAvatar';
 
 function getTagTone(index) {
     const tones = ['#29CFFF', '#25F2A0', '#FF66D6', '#FFD327'];
     return tones[index % tones.length];
-}
-
-function getInitials(name) {
-    if (!name) {
-        return 'YC';
-    }
-
-    return name
-        .split(' ')
-        .slice(0, 2)
-        .map((part) => part[0]?.toUpperCase())
-        .join('');
 }
 
 function getQuestionStatusLabel(question, answers) {
@@ -281,17 +270,12 @@ export function QuestionDetailsPage() {
                     <div className="absolute right-12 top-10 h-3 w-3 rounded-full bg-[#29CFFF]" />
 
                     <div className="flex items-start gap-4">
-                        {question.you_coder?.photo ? (
-                            <img
-                                src={question.you_coder.photo}
-                                alt={question.you_coder.name}
-                                className="h-16 w-16 rounded-[1.2rem] border-2 border-black object-cover shadow-[4px_4px_0_rgba(0,0,0,0.8)]"
-                            />
-                        ) : (
-                            <div className="flex h-16 w-16 items-center justify-center rounded-[1.2rem] border-2 border-black bg-[linear-gradient(135deg,#29CFFF_0%,#25F2A0_58%,#FFD327_100%)] text-xl font-black text-black shadow-[4px_4px_0_rgba(0,0,0,0.8)]">
-                                {getInitials(question.you_coder?.name)}
-                            </div>
-                        )}
+                        <UserAvatar
+                            name={question.you_coder?.name}
+                            photo={question.you_coder?.photo}
+                            size="lg"
+                            innerClassName="bg-[#FFF3DC] text-black"
+                        />
 
                         <div className="min-w-0 flex-1">
                             <p className="text-xs font-black uppercase tracking-[0.22em] text-[#7b5c3d]">

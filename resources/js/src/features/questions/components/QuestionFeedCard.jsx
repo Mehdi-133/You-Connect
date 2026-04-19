@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { UserAvatar } from '../../../shared/components/UserAvatar';
 
 function getStatusLabel(question) {
     if (question.status === 'closed') {
@@ -17,33 +18,15 @@ function getTagTone(index) {
     return tones[index % tones.length];
 }
 
-function getInitials(name) {
-    if (!name) {
-        return 'YC';
-    }
-
-    return name
-        .split(' ')
-        .slice(0, 2)
-        .map((part) => part[0]?.toUpperCase())
-        .join('');
-}
-
 export function QuestionFeedCard({ question }) {
     return (
         <article className="surface festival-card rounded-[2rem] p-5 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
             <div className="flex items-start gap-4">
-                {question.you_coder?.photo ? (
-                    <img
-                        src={question.you_coder.photo}
-                        alt={question.you_coder.name}
-                        className="h-14 w-14 rounded-[1.1rem] border-2 border-black object-cover shadow-[4px_4px_0_rgba(0,0,0,0.8)]"
-                    />
-                ) : (
-                    <div className="flex h-14 w-14 items-center justify-center rounded-[1.1rem] border-2 border-black bg-[linear-gradient(135deg,#29CFFF_0%,#25F2A0_58%,#FFD327_100%)] text-lg font-black text-black shadow-[4px_4px_0_rgba(0,0,0,0.8)]">
-                        {getInitials(question.you_coder?.name)}
-                    </div>
-                )}
+                <UserAvatar
+                    name={question.you_coder?.name}
+                    photo={question.you_coder?.photo}
+                    size="md"
+                />
 
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">

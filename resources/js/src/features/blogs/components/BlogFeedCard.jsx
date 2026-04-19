@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { UserAvatar } from '../../../shared/components/UserAvatar';
 
 function getStatusLabel(status, isHighlighted) {
     if (isHighlighted) {
@@ -38,18 +39,6 @@ function getStatusBadgeClass(status, isHighlighted) {
     }
 
     return 'border-2 border-black bg-[#FFF3DC] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)]';
-}
-
-function getAuthorInitials(name) {
-    if (!name) {
-        return 'YC';
-    }
-
-    return name
-        .split(' ')
-        .slice(0, 2)
-        .map((part) => part[0]?.toUpperCase())
-        .join('');
 }
 
 function getRelativeTime(value) {
@@ -96,8 +85,12 @@ export function BlogFeedCard({
             <div className="relative border-b border-white/10 px-7 py-7">
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 gap-4">
-                        <div className="flex h-14 w-14 shrink-0 rotate-[-4deg] items-center justify-center rounded-[1.3rem] border-2 border-black bg-[linear-gradient(135deg,#25F2A0_0%,#29CFFF_50%,#FFD327_100%)] text-sm font-black text-[#101215] shadow-[5px_5px_0_rgba(0,0,0,0.85)]">
-                            {getAuthorInitials(blog.you_coder?.name)}
+                        <div className="shrink-0">
+                            <UserAvatar
+                                name={blog.you_coder?.name}
+                                photo={blog.you_coder?.photo}
+                                size="md"
+                            />
                         </div>
 
                         <div className="min-w-0">

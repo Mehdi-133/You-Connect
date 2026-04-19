@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { YouConnectLogo } from '../components/YouConnectLogo';
+import { UserAvatar } from '../components/UserAvatar';
 import { logout } from '../../services/api/auth.service';
 import { useAuth } from '../../hooks/useAuth';
 import { getNotifications } from '../../services/api/notifications.service';
@@ -102,18 +103,6 @@ function getRoleAccent(user) {
     };
 }
 
-function getInitials(name) {
-    if (!name) {
-        return 'YC';
-    }
-
-    return name
-        .split(' ')
-        .slice(0, 2)
-        .map((part) => part[0]?.toUpperCase())
-        .join('');
-}
-
 function SearchIcon() {
     return (
         <svg viewBox="0 0 20 20" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
@@ -167,7 +156,6 @@ export function AppLayout() {
     const controlRoomItems = getControlRoomItems(user, unreadNotificationsCount);
     const roleTheme = useMemo(() => getRoleTheme(user), [user]);
     const roleAccent = useMemo(() => getRoleAccent(user), [user]);
-    const avatarFallback = getInitials(user?.name);
 
     useEffect(() => {
         let isMounted = true;
@@ -356,19 +344,12 @@ export function AppLayout() {
                                 }}
                                 className="group flex items-center gap-3 rounded-[1.6rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.03)_100%)] px-3 py-2.5 shadow-[4px_4px_0_rgba(0,0,0,0.7)] transition hover:border-white/15 hover:bg-[linear-gradient(135deg,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0.05)_100%)]"
                             >
-                                <div className={`rounded-full bg-gradient-to-br p-[2px] ${roleAccent.ring}`}>
-                                    {user?.photo ? (
-                                        <img
-                                            src={user.photo}
-                                            alt={user.name}
-                                            className="h-11 w-11 rounded-full border border-black/80 object-cover"
-                                        />
-                                    ) : (
-                                        <div className="flex h-11 w-11 items-center justify-center rounded-full border border-black/80 bg-[#05020d] text-sm font-black text-[#FFF3DC]">
-                                            {avatarFallback}
-                                        </div>
-                                    )}
-                                </div>
+                                <UserAvatar
+                                    name={user?.name}
+                                    photo={user?.photo}
+                                    size="sm"
+                                    ringClassName={roleAccent.ring}
+                                />
                                 <div className="hidden text-left md:block">
                                     <p className="text-sm font-black text-[#FFF3DC]">{user?.name || 'Workspace user'}</p>
                                     <div className="mt-1 flex items-center gap-2">

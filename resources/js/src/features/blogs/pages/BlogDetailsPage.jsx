@@ -7,6 +7,7 @@ import { LoadingState } from '../../../shared/ui/feedback/LoadingState';
 import { useAuth } from '../../../hooks/useAuth';
 import { canModerateBlogs } from '../../../shared/utils/roles';
 import { createComment } from '../../../services/api/comments.service';
+import { UserAvatar } from '../../../shared/components/UserAvatar';
 import {
     approveBlog,
     getBlog,
@@ -54,18 +55,6 @@ function getStatusBadgeClass(status, isHighlighted) {
     }
 
     return 'border-2 border-black bg-[#FFF3DC] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)]';
-}
-
-function getInitials(name) {
-    if (!name) {
-        return 'YC';
-    }
-
-    return name
-        .split(' ')
-        .slice(0, 2)
-        .map((part) => part[0]?.toUpperCase())
-        .join('');
 }
 
 export function BlogDetailsPage() {
@@ -552,15 +541,17 @@ export function BlogDetailsPage() {
                             <article key={comment.id} className="surface festival-card rounded-[2rem] border border-white/10 bg-white/5 p-5 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
                                 <div className="flex items-start gap-4">
                                     {comment.you_coder?.photo ? (
-                                        <img
-                                            src={comment.you_coder.photo}
-                                            alt={comment.you_coder.name}
-                                            className="h-12 w-12 rounded-[1rem] border-2 border-black object-cover shadow-[4px_4px_0_rgba(0,0,0,0.8)]"
+                                        <UserAvatar
+                                            name={comment.you_coder?.name}
+                                            photo={comment.you_coder?.photo}
+                                            size="sm"
                                         />
                                     ) : (
-                                        <div className="flex h-12 w-12 items-center justify-center rounded-[1rem] border-2 border-black bg-[linear-gradient(135deg,#29CFFF_0%,#25F2A0_58%,#FFD327_100%)] text-sm font-black text-black shadow-[4px_4px_0_rgba(0,0,0,0.8)]">
-                                            {getInitials(comment.you_coder?.name)}
-                                        </div>
+                                        <UserAvatar
+                                            name={comment.you_coder?.name}
+                                            photo={comment.you_coder?.photo}
+                                            size="sm"
+                                        />
                                     )}
 
                                     <div className="min-w-0 flex-1">
