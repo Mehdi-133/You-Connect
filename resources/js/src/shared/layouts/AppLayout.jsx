@@ -21,6 +21,7 @@ function getNavigationItems(user, unreadNotificationsCount) {
     if (isAdmin(user)) {
         return [
             { to: '/app', label: 'Dashboard' },
+            { to: '/app/admin/badges-interests', label: 'Admin Lab' },
             notificationItem,
             { to: '/app/blogs', label: 'Blogs' },
             { to: '/app/questions', label: 'Questions' },

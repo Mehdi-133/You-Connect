@@ -1,8 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SectionCard } from '../../../shared/components/SectionCard';
 import { useAuth } from '../../../hooks/useAuth';
-import { getUser, getUserScore, updateUser } from '../../../services/api/users.service';
-import { getRoleLabel } from '../../../shared/utils/roles';
+import {
+    addUserInterest,
+    assignUserBadge,
+    getBadges,
+    getInterests,
+    getUser,
+    getUserScore,
+    removeUserInterest,
+    revokeUserBadge,
+    updateUser,
+} from '../../../services/api/users.service';
+import { getRoleLabel, isAdmin } from '../../../shared/utils/roles';
 import { EmptyState } from '../../../shared/ui/feedback/EmptyState';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
 import { LoadingState } from '../../../shared/ui/feedback/LoadingState';
@@ -83,6 +93,18 @@ export function ProfilePage() {
     const [fieldErrors, setFieldErrors] = useState({});
     const [successMessage, setSuccessMessage] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [allInterests, setAllInterests] = useState([]);
+    const [allBadges, setAllBadges] = useState([]);
+    const [selectedInterestId, setSelectedInterestId] = useState('');
+    const [selectedBadgeId, setSelectedBadgeId] = useState('');
+    const [interestMessage, setInterestMessage] = useState('');
+    const [interestError, setInterestError] = useState('');
+    const [badgeMessage, setBadgeMessage] = useState('');
+    const [badgeError, setBadgeError] = useState('');
+    const [processingInterestId, setProcessingInterestId] = useState(null);
+    const [processingBadgeId, setProcessingBadgeId] = useState(null);
+    const [isAddingInterest, setIsAddingInterest] = useState(false);
+    const [isAssigningBadge, setIsAssigningBadge] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -96,10 +118,17 @@ export function ProfilePage() {
             setError('');
 
             try {
-                const [profileResponse, scoreResponse] = await Promise.all([
+                const requests = [
                     getUser(user.id),
                     getUserScore(user.id),
-                ]);
+                    getInterests(),
+                ];
+
+                if (isAdmin(user)) {
+                    requests.push(getBadges());
+                }
+
+                const [profileResponse, scoreResponse, interestsResponse, badgesResponse] = await Promise.all(requests);
 
                 if (!isMounted) {
                     return;
@@ -107,6 +136,8 @@ export function ProfilePage() {
 
                 setProfile(profileResponse);
                 setScore(scoreResponse.reputation);
+                setAllInterests(interestsResponse?.data || []);
+                setAllBadges(badgesResponse?.data || []);
                 setForm({
                     name: profileResponse.name || '',
                     bio: profileResponse.bio || '',
@@ -140,6 +171,18 @@ export function ProfilePage() {
         () => getProfileHighlights(profile, score),
         [profile, score]
     );
+
+    const availableInterests = useMemo(() => {
+        const selectedIds = new Set((profile?.interests || []).map((interest) => interest.id));
+
+        return allInterests.filter((interest) => !selectedIds.has(interest.id));
+    }, [allInterests, profile?.interests]);
+
+    const availableBadges = useMemo(() => {
+        const selectedIds = new Set((profile?.badges || []).map((badge) => badge.id));
+
+        return allBadges.filter((badge) => !selectedIds.has(badge.id));
+    }, [allBadges, profile?.badges]);
 
     function handleInputChange(event) {
         const { name, value } = event.target;
@@ -204,6 +247,110 @@ export function ProfilePage() {
             );
         } finally {
             setIsSaving(false);
+        }
+    }
+
+    async function handleAddInterest() {
+        if (!selectedInterestId) {
+            return;
+        }
+
+        setInterestError('');
+        setInterestMessage('');
+        setIsAddingInterest(true);
+
+        try {
+            const response = await addUserInterest(user.id, selectedInterestId);
+            const nextInterest = response.interest;
+
+            setProfile((currentProfile) => ({
+                ...currentProfile,
+                interests: [...(currentProfile?.interests || []), nextInterest],
+            }));
+            setSelectedInterestId('');
+            setInterestMessage('Interest added successfully.');
+        } catch (requestError) {
+            setInterestError(
+                requestError.response?.data?.message ||
+                'We could not add this interest right now.'
+            );
+        } finally {
+            setIsAddingInterest(false);
+        }
+    }
+
+    async function handleRemoveInterest(interestId) {
+        setInterestError('');
+        setInterestMessage('');
+        setProcessingInterestId(interestId);
+
+        try {
+            await removeUserInterest(user.id, interestId);
+
+            setProfile((currentProfile) => ({
+                ...currentProfile,
+                interests: (currentProfile?.interests || []).filter((interest) => interest.id !== interestId),
+            }));
+            setInterestMessage('Interest removed successfully.');
+        } catch (requestError) {
+            setInterestError(
+                requestError.response?.data?.message ||
+                'We could not remove this interest right now.'
+            );
+        } finally {
+            setProcessingInterestId(null);
+        }
+    }
+
+    async function handleAssignBadge() {
+        if (!selectedBadgeId) {
+            return;
+        }
+
+        setBadgeError('');
+        setBadgeMessage('');
+        setIsAssigningBadge(true);
+
+        try {
+            const response = await assignUserBadge(user.id, selectedBadgeId);
+            const nextBadge = response.badge;
+
+            setProfile((currentProfile) => ({
+                ...currentProfile,
+                badges: [...(currentProfile?.badges || []), nextBadge],
+            }));
+            setSelectedBadgeId('');
+            setBadgeMessage('Badge assigned successfully.');
+        } catch (requestError) {
+            setBadgeError(
+                requestError.response?.data?.message ||
+                'We could not assign this badge right now.'
+            );
+        } finally {
+            setIsAssigningBadge(false);
+        }
+    }
+
+    async function handleRevokeBadge(badgeId) {
+        setBadgeError('');
+        setBadgeMessage('');
+        setProcessingBadgeId(badgeId);
+
+        try {
+            await revokeUserBadge(user.id, badgeId);
+
+            setProfile((currentProfile) => ({
+                ...currentProfile,
+                badges: (currentProfile?.badges || []).filter((badge) => badge.id !== badgeId),
+            }));
+            setBadgeMessage('Badge revoked successfully.');
+        } catch (requestError) {
+            setBadgeError(
+                requestError.response?.data?.message ||
+                'We could not revoke this badge right now.'
+            );
+        } finally {
+            setProcessingBadgeId(null);
         }
     }
 
@@ -474,14 +621,60 @@ export function ProfilePage() {
                                     </span>
                                 </div>
 
+                                {isAdmin(user) ? (
+                                    <div className="mb-4 rounded-[1.4rem] border border-white/10 bg-white/5 p-4">
+                                        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#FFD327]">
+                                            Admin controls
+                                        </p>
+                                        <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+                                            <select
+                                                value={selectedBadgeId}
+                                                onChange={(event) => setSelectedBadgeId(event.target.value)}
+                                                className="flex-1 rounded-[1rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
+                                            >
+                                                <option value="">Assign a badge</option>
+                                                {availableBadges.map((badge) => (
+                                                    <option key={badge.id} value={badge.id}>
+                                                        {badge.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <button
+                                                type="button"
+                                                onClick={handleAssignBadge}
+                                                disabled={!selectedBadgeId || isAssigningBadge}
+                                                className="rounded-full bg-[#FFD327] px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-black disabled:cursor-not-allowed disabled:opacity-70"
+                                            >
+                                                {isAssigningBadge ? 'Assigning...' : 'Assign'}
+                                            </button>
+                                        </div>
+                                        {badgeError ? (
+                                            <p className="mt-3 text-sm font-bold text-[#FFD327]">{badgeError}</p>
+                                        ) : null}
+                                        {badgeMessage ? (
+                                            <p className="mt-3 text-sm font-bold text-[#25F2A0]">{badgeMessage}</p>
+                                        ) : null}
+                                    </div>
+                                ) : null}
+
                                 {profile.badges?.length ? (
                                     <div className="flex flex-wrap gap-3">
                                         {profile.badges.map((badge) => (
                                             <div
                                                 key={badge.id}
-                                                className="rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#FFF3DC]"
+                                                className="flex items-center gap-3 rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#FFF3DC]"
                                             >
-                                                {badge.name}
+                                                <span>{badge.name}</span>
+                                                {isAdmin(user) ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRevokeBadge(badge.id)}
+                                                        disabled={processingBadgeId === badge.id}
+                                                        className="rounded-full border border-[#ff8f8f]/40 bg-[#2a0b15] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#ffb8b8] disabled:cursor-not-allowed disabled:opacity-60"
+                                                    >
+                                                        {processingBadgeId === badge.id ? 'Removing...' : 'Revoke'}
+                                                    </button>
+                                                ) : null}
                                             </div>
                                         ))}
                                     </div>
@@ -502,14 +695,56 @@ export function ProfilePage() {
                                     </span>
                                 </div>
 
+                                <div className="mb-4 rounded-[1.4rem] border border-white/10 bg-white/5 p-4">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#29CFFF]">
+                                        Interest picker
+                                    </p>
+                                    <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+                                        <select
+                                            value={selectedInterestId}
+                                            onChange={(event) => setSelectedInterestId(event.target.value)}
+                                            className="flex-1 rounded-[1rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
+                                        >
+                                            <option value="">Choose an interest</option>
+                                            {availableInterests.map((interest) => (
+                                                <option key={interest.id} value={interest.id}>
+                                                    {interest.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            onClick={handleAddInterest}
+                                            disabled={!selectedInterestId || isAddingInterest}
+                                            className="rounded-full bg-[#29CFFF] px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-black disabled:cursor-not-allowed disabled:opacity-70"
+                                        >
+                                            {isAddingInterest ? 'Adding...' : 'Add'}
+                                        </button>
+                                    </div>
+                                    {interestError ? (
+                                        <p className="mt-3 text-sm font-bold text-[#FFD327]">{interestError}</p>
+                                    ) : null}
+                                    {interestMessage ? (
+                                        <p className="mt-3 text-sm font-bold text-[#25F2A0]">{interestMessage}</p>
+                                    ) : null}
+                                </div>
+
                                 {profile.interests?.length ? (
                                     <div className="flex flex-wrap gap-3">
                                         {profile.interests.map((interest) => (
                                             <div
                                                 key={interest.id}
-                                                className="rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#FFF3DC]"
+                                                className="flex items-center gap-3 rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#FFF3DC]"
                                             >
-                                                {interest.name}
+                                                <span>{interest.name}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveInterest(interest.id)}
+                                                    disabled={processingInterestId === interest.id}
+                                                    className="rounded-full border border-[#7ad7ff]/40 bg-[#071b2c] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#8de1ff] disabled:cursor-not-allowed disabled:opacity-60"
+                                                >
+                                                    {processingInterestId === interest.id ? 'Removing...' : 'Remove'}
+                                                </button>
                                             </div>
                                         ))}
                                     </div>

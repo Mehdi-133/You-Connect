@@ -12,10 +12,12 @@ import { BlogsPage } from '../features/blogs/pages/BlogsPage';
 import { BlogDetailsPage } from '../features/blogs/pages/BlogDetailsPage';
 import { NotificationsPage } from '../features/notifications/pages/NotificationsPage';
 import { ProfilePage } from '../features/profile/pages/ProfilePage';
+import { BadgeInterestAdminPage } from '../features/admin/pages/BadgeInterestAdminPage';
 import { ProtectedRoute } from './ProtectedRoute';
+import { isAdmin } from '../shared/utils/roles';
 
 export function AppRouter() {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
 
     return (
         <Routes>
@@ -45,6 +47,14 @@ export function AppRouter() {
                 <Route path="/app/blogs/:blogId" element={<BlogDetailsPage />} />
                 <Route path="/app/notifications" element={<NotificationsPage />} />
                 <Route path="/app/profile" element={<ProfilePage />} />
+                <Route
+                    path="/app/admin/badges-interests"
+                    element={(
+                        <ProtectedRoute isAllowed={isAdmin(user)}>
+                            <BadgeInterestAdminPage />
+                        </ProtectedRoute>
+                    )}
+                />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />
