@@ -3,16 +3,13 @@ import { SectionCard } from '../../../shared/components/SectionCard';
 import { useAuth } from '../../../hooks/useAuth';
 import {
     addUserInterest,
-    assignUserBadge,
-    getBadges,
     getInterests,
     getUser,
     getUserScore,
     removeUserInterest,
-    revokeUserBadge,
     updateUser,
 } from '../../../services/api/users.service';
-import { getRoleLabel, isAdmin } from '../../../shared/utils/roles';
+import { getRoleLabel } from '../../../shared/utils/roles';
 import { EmptyState } from '../../../shared/ui/feedback/EmptyState';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
 import { LoadingState } from '../../../shared/ui/feedback/LoadingState';
@@ -77,6 +74,69 @@ function getFieldValue(form, key) {
     return form[key] || '';
 }
 
+function getBadgeTone(index) {
+    const tones = [
+        'from-[#FFD327] via-[#FFB800] to-[#FF8B1F]',
+        'from-[#29CFFF] via-[#54E2FF] to-[#25F2A0]',
+        'from-[#A34DFF] via-[#C975FF] to-[#FF66D6]',
+        'from-[#25F2A0] via-[#A8FF6A] to-[#FFD327]',
+    ];
+
+    return tones[index % tones.length];
+}
+
+function getBadgeIconLabel(badge) {
+    if (badge?.icon) {
+        return badge.icon
+            .split(/[-_]/)
+            .map((part) => part[0]?.toUpperCase())
+            .join('')
+            .slice(0, 2);
+    }
+
+    return badge?.name?.slice(0, 1)?.toUpperCase() || 'B';
+}
+
+function formatAwardedAt(value) {
+    if (!value) {
+        return 'Recently earned';
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return 'Recently earned';
+    }
+
+    return `Earned ${date.toLocaleDateString()}`;
+}
+
+function getReputationDetails(scoreValue) {
+    const score = Number(scoreValue) || 0;
+    const milestones = [
+        { min: 0, max: 49, label: 'New member', nextLabel: 'Active learner' },
+        { min: 50, max: 149, label: 'Active learner', nextLabel: 'Rising contributor' },
+        { min: 150, max: 299, label: 'Rising contributor', nextLabel: 'Trusted builder' },
+        { min: 300, max: 499, label: 'Trusted builder', nextLabel: 'Community standout' },
+        { min: 500, max: Infinity, label: 'Community standout', nextLabel: null },
+    ];
+
+    const currentTier = milestones.find((tier) => score >= tier.min && score <= tier.max) || milestones[0];
+    const span = currentTier.max === Infinity ? 1 : currentTier.max - currentTier.min + 1;
+    const progressValue = currentTier.max === Infinity
+        ? 100
+        : Math.min(100, Math.round(((score - currentTier.min) / span) * 100));
+
+    return {
+        score,
+        label: currentTier.label,
+        nextLabel: currentTier.nextLabel,
+        currentFloor: currentTier.min,
+        nextMilestone: currentTier.max === Infinity ? null : currentTier.max + 1,
+        progressValue,
+    };
+}
+
 export function ProfilePage() {
     const { user, updateCurrentUser } = useAuth();
     const [profile, setProfile] = useState(null);
@@ -94,17 +154,11 @@ export function ProfilePage() {
     const [successMessage, setSuccessMessage] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [allInterests, setAllInterests] = useState([]);
-    const [allBadges, setAllBadges] = useState([]);
     const [selectedInterestId, setSelectedInterestId] = useState('');
-    const [selectedBadgeId, setSelectedBadgeId] = useState('');
     const [interestMessage, setInterestMessage] = useState('');
     const [interestError, setInterestError] = useState('');
-    const [badgeMessage, setBadgeMessage] = useState('');
-    const [badgeError, setBadgeError] = useState('');
     const [processingInterestId, setProcessingInterestId] = useState(null);
-    const [processingBadgeId, setProcessingBadgeId] = useState(null);
     const [isAddingInterest, setIsAddingInterest] = useState(false);
-    const [isAssigningBadge, setIsAssigningBadge] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -118,17 +172,11 @@ export function ProfilePage() {
             setError('');
 
             try {
-                const requests = [
+                const [profileResponse, scoreResponse, interestsResponse] = await Promise.all([
                     getUser(user.id),
                     getUserScore(user.id),
                     getInterests(),
-                ];
-
-                if (isAdmin(user)) {
-                    requests.push(getBadges());
-                }
-
-                const [profileResponse, scoreResponse, interestsResponse, badgesResponse] = await Promise.all(requests);
+                ]);
 
                 if (!isMounted) {
                     return;
@@ -137,7 +185,6 @@ export function ProfilePage() {
                 setProfile(profileResponse);
                 setScore(scoreResponse.reputation);
                 setAllInterests(interestsResponse?.data || []);
-                setAllBadges(badgesResponse?.data || []);
                 setForm({
                     name: profileResponse.name || '',
                     bio: profileResponse.bio || '',
@@ -171,18 +218,20 @@ export function ProfilePage() {
         () => getProfileHighlights(profile, score),
         [profile, score]
     );
+    const reputationDetails = useMemo(
+        () => getReputationDetails(score ?? profile?.reputation ?? 0),
+        [profile?.reputation, score]
+    );
 
     const availableInterests = useMemo(() => {
         const selectedIds = new Set((profile?.interests || []).map((interest) => interest.id));
 
         return allInterests.filter((interest) => !selectedIds.has(interest.id));
     }, [allInterests, profile?.interests]);
-
-    const availableBadges = useMemo(() => {
-        const selectedIds = new Set((profile?.badges || []).map((badge) => badge.id));
-
-        return allBadges.filter((badge) => !selectedIds.has(badge.id));
-    }, [allBadges, profile?.badges]);
+    const featuredBadges = useMemo(
+        () => (profile?.badges || []).slice(0, 3),
+        [profile?.badges]
+    );
 
     function handleInputChange(event) {
         const { name, value } = event.target;
@@ -302,58 +351,6 @@ export function ProfilePage() {
         }
     }
 
-    async function handleAssignBadge() {
-        if (!selectedBadgeId) {
-            return;
-        }
-
-        setBadgeError('');
-        setBadgeMessage('');
-        setIsAssigningBadge(true);
-
-        try {
-            const response = await assignUserBadge(user.id, selectedBadgeId);
-            const nextBadge = response.badge;
-
-            setProfile((currentProfile) => ({
-                ...currentProfile,
-                badges: [...(currentProfile?.badges || []), nextBadge],
-            }));
-            setSelectedBadgeId('');
-            setBadgeMessage('Badge assigned successfully.');
-        } catch (requestError) {
-            setBadgeError(
-                requestError.response?.data?.message ||
-                'We could not assign this badge right now.'
-            );
-        } finally {
-            setIsAssigningBadge(false);
-        }
-    }
-
-    async function handleRevokeBadge(badgeId) {
-        setBadgeError('');
-        setBadgeMessage('');
-        setProcessingBadgeId(badgeId);
-
-        try {
-            await revokeUserBadge(user.id, badgeId);
-
-            setProfile((currentProfile) => ({
-                ...currentProfile,
-                badges: (currentProfile?.badges || []).filter((badge) => badge.id !== badgeId),
-            }));
-            setBadgeMessage('Badge revoked successfully.');
-        } catch (requestError) {
-            setBadgeError(
-                requestError.response?.data?.message ||
-                'We could not revoke this badge right now.'
-            );
-        } finally {
-            setProcessingBadgeId(null);
-        }
-    }
-
     if (isLoading) {
         return (
             <LoadingState
@@ -431,6 +428,49 @@ export function ProfilePage() {
                             </div>
                         </div>
 
+                        <div className="mt-6 rounded-[1.6rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.02)_100%)] p-4">
+                            <div className="flex items-center justify-between gap-3">
+                                <div>
+                                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#FFD327]">
+                                        Badge showcase
+                                    </p>
+                                    <p className="mt-2 text-sm text-[#d8cfbd]">
+                                        Your latest achievements stay visible right under your identity.
+                                    </p>
+                                </div>
+                                <span className="rounded-full bg-[#FFD327] px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-black shadow-[3px_3px_0_rgba(0,0,0,0.75)]">
+                                    {profile.badges?.length ?? 0}
+                                </span>
+                            </div>
+
+                            {featuredBadges.length ? (
+                                <div className="mt-4 grid gap-3">
+                                    {featuredBadges.map((badge, index) => (
+                                        <div
+                                            key={badge.id}
+                                            className="rounded-[1.3rem] border border-white/10 bg-[#09051a]/70 p-3 shadow-[4px_4px_0_rgba(0,0,0,0.65)]"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className={`flex h-12 w-12 items-center justify-center rounded-[1rem] bg-gradient-to-br ${getBadgeTone(index)} text-sm font-black text-black shadow-[3px_3px_0_rgba(0,0,0,0.55)]`}>
+                                                    {getBadgeIconLabel(badge)}
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-sm font-black text-[#FFF3DC]">{badge.name}</p>
+                                                    <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#d8cfbd]">
+                                                        {formatAwardedAt(badge.pivot?.awarded_at)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="mt-4 text-sm leading-7 text-[#d8cfbd]">
+                                    Earned badges will appear here as a quick showcase.
+                                </p>
+                            )}
+                        </div>
+
                         <div className="mt-6 grid gap-3 text-sm text-[#d8cfbd]">
                             <div className="rounded-[1.3rem] border border-white/10 bg-white/5 px-4 py-3">
                                 <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#25F2A0]">
@@ -475,6 +515,88 @@ export function ProfilePage() {
                                     </p>
                                 </div>
                             ))}
+                        </div>
+
+                        <div className="surface festival-card overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(140deg,rgba(255,211,39,0.12)_0%,rgba(41,207,255,0.08)_38%,rgba(163,77,255,0.08)_100%)] p-6 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
+                            <div className="flex flex-wrap items-start justify-between gap-4">
+                                <div>
+                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-[#FFD327]">
+                                        Reputation
+                                    </p>
+                                    <h3 className="mt-3 font-display text-3xl font-extrabold leading-none text-[#FFF3DC]">
+                                        Your community signal
+                                    </h3>
+                                    <p className="mt-3 max-w-2xl text-sm leading-7 text-[#d8cfbd]">
+                                        Your reputation grows when you stay active, share knowledge, and keep showing up across questions, blogs, and recognition moments.
+                                    </p>
+                                </div>
+                                <div className="rounded-[1.4rem] border border-white/10 bg-[#09051a]/70 px-5 py-4 text-right shadow-[4px_4px_0_rgba(0,0,0,0.6)]">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                        Current tier
+                                    </p>
+                                    <p className="mt-2 text-xl font-black text-[#FFF3DC]">
+                                        {reputationDetails.label}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+                                <div className="rounded-[1.6rem] border border-white/10 bg-[#09051a]/75 p-5 shadow-[4px_4px_0_rgba(0,0,0,0.65)]">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#FFD327]">
+                                        Reputation score
+                                    </p>
+                                    <div className="mt-4 flex items-end gap-3">
+                                        <span className="font-display text-6xl font-extrabold leading-none text-[#FFF3DC]">
+                                            {reputationDetails.score}
+                                        </span>
+                                        <span className="pb-2 text-sm font-bold uppercase tracking-[0.14em] text-[#d8cfbd]">
+                                            points
+                                        </span>
+                                    </div>
+
+                                    <div className="mt-6">
+                                        <div className="flex items-center justify-between gap-3 text-[11px] font-black uppercase tracking-[0.14em] text-[#d8cfbd]">
+                                            <span>{reputationDetails.label}</span>
+                                            <span>
+                                                {reputationDetails.nextMilestone
+                                                    ? `${reputationDetails.progressValue}% to ${reputationDetails.nextLabel}`
+                                                    : 'Top tier reached'}
+                                            </span>
+                                        </div>
+                                        <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/10">
+                                            <div
+                                                className="h-full rounded-full bg-[linear-gradient(90deg,#FFD327_0%,#25F2A0_48%,#29CFFF_100%)]"
+                                                style={{ width: `${reputationDetails.progressValue}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid gap-3">
+                                    <div className="rounded-[1.4rem] border border-white/10 bg-white/5 px-4 py-4">
+                                        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                            Next milestone
+                                        </p>
+                                        <p className="mt-2 text-2xl font-black text-[#FFF3DC]">
+                                            {reputationDetails.nextMilestone || 'Maxed out'}
+                                        </p>
+                                        <p className="mt-2 text-sm leading-7 text-[#d8cfbd]">
+                                            {reputationDetails.nextMilestone
+                                                ? `Reach ${reputationDetails.nextMilestone} points to unlock the ${reputationDetails.nextLabel} tier.`
+                                                : 'You are already in the highest visible reputation tier.'}
+                                        </p>
+                                    </div>
+
+                                    <div className="rounded-[1.4rem] border border-white/10 bg-white/5 px-4 py-4">
+                                        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#29CFFF]">
+                                            Why it matters
+                                        </p>
+                                        <p className="mt-2 text-sm leading-7 text-[#d8cfbd]">
+                                            Reputation helps others quickly understand how consistently you contribute, collaborate, and create value inside YouConnect.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
@@ -621,60 +743,34 @@ export function ProfilePage() {
                                     </span>
                                 </div>
 
-                                {isAdmin(user) ? (
-                                    <div className="mb-4 rounded-[1.4rem] border border-white/10 bg-white/5 p-4">
-                                        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#FFD327]">
-                                            Admin controls
-                                        </p>
-                                        <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-                                            <select
-                                                value={selectedBadgeId}
-                                                onChange={(event) => setSelectedBadgeId(event.target.value)}
-                                                className="flex-1 rounded-[1rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
-                                            >
-                                                <option value="">Assign a badge</option>
-                                                {availableBadges.map((badge) => (
-                                                    <option key={badge.id} value={badge.id}>
-                                                        {badge.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <button
-                                                type="button"
-                                                onClick={handleAssignBadge}
-                                                disabled={!selectedBadgeId || isAssigningBadge}
-                                                className="rounded-full bg-[#FFD327] px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-black disabled:cursor-not-allowed disabled:opacity-70"
-                                            >
-                                                {isAssigningBadge ? 'Assigning...' : 'Assign'}
-                                            </button>
-                                        </div>
-                                        {badgeError ? (
-                                            <p className="mt-3 text-sm font-bold text-[#FFD327]">{badgeError}</p>
-                                        ) : null}
-                                        {badgeMessage ? (
-                                            <p className="mt-3 text-sm font-bold text-[#25F2A0]">{badgeMessage}</p>
-                                        ) : null}
-                                    </div>
-                                ) : null}
-
                                 {profile.badges?.length ? (
-                                    <div className="flex flex-wrap gap-3">
-                                        {profile.badges.map((badge) => (
+                                    <div className="grid gap-3">
+                                        {profile.badges.map((badge, index) => (
                                             <div
                                                 key={badge.id}
-                                                className="flex items-center gap-3 rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#FFF3DC]"
+                                                className="rounded-[1.4rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.03)_100%)] p-4"
                                             >
-                                                <span>{badge.name}</span>
-                                                {isAdmin(user) ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRevokeBadge(badge.id)}
-                                                        disabled={processingBadgeId === badge.id}
-                                                        className="rounded-full border border-[#ff8f8f]/40 bg-[#2a0b15] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#ffb8b8] disabled:cursor-not-allowed disabled:opacity-60"
-                                                    >
-                                                        {processingBadgeId === badge.id ? 'Removing...' : 'Revoke'}
-                                                    </button>
-                                                ) : null}
+                                                <div className="flex items-start gap-4">
+                                                    <div className={`flex h-14 w-14 items-center justify-center rounded-[1rem] bg-gradient-to-br ${getBadgeTone(index)} text-sm font-black text-black shadow-[4px_4px_0_rgba(0,0,0,0.55)]`}>
+                                                        {getBadgeIconLabel(badge)}
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <p className="font-display text-2xl font-extrabold leading-none text-[#FFF3DC]">
+                                                                {badge.name}
+                                                            </p>
+                                                            <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#d8cfbd]">
+                                                                {badge.points_required || 0} pts
+                                                            </span>
+                                                        </div>
+                                                        <p className="mt-3 text-sm leading-7 text-[#d8cfbd]">
+                                                            {badge.description || 'This badge marks a meaningful milestone inside your learning journey.'}
+                                                        </p>
+                                                        <p className="mt-3 text-[11px] font-black uppercase tracking-[0.14em] text-[#FFD327]">
+                                                            {formatAwardedAt(badge.pivot?.awarded_at)}
+                                                        </p>
+                                                    </div>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
