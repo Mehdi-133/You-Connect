@@ -12,7 +12,10 @@ class ClubController extends Controller
     public function index()
     {
         $this->authorize('viewAny', Club::class);
-        return Club::with('creator:id,name,photo')->latest()->paginate(10);
+        return Club::with('creator:id,name,photo')
+            ->withCount('members')
+            ->latest()
+            ->paginate(10);
     }
 
     public function store(StoreClubRequest $request)
@@ -37,7 +40,8 @@ class ClubController extends Controller
     public function show(Club $club)
     {
         $this->authorize('view', $club);
-        return $club->load(['creator:id,name,photo', 'members']);
+        return $club->load(['creator:id,name,photo', 'members:id,name,photo,bio'])
+            ->loadCount('members');
     }
 
     public function update(UpdateClubRequest $request, Club $club)

@@ -4,6 +4,7 @@ import { YouConnectLogo } from '../components/YouConnectLogo';
 import { logout } from '../../services/api/auth.service';
 import { useAuth } from '../../hooks/useAuth';
 import { getNotifications } from '../../services/api/notifications.service';
+import { getUser } from '../../services/api/users.service';
 import {
     getRoleLabel,
     isAdmin,
@@ -11,11 +12,17 @@ import {
     isFormateur,
 } from '../utils/roles';
 
-function getPrimaryNavigationItems(user, unreadNotificationsCount) {
-    const items = [
+function getPrimaryNavigationItems() {
+    return [
         { to: '/app', label: 'Dashboard' },
         { to: '/app/questions', label: 'Questions' },
         { to: '/app/blogs', label: 'Blogs' },
+        { to: '/app/clubs', label: 'Clubs' },
+    ];
+}
+
+function getControlRoomItems(user, unreadNotificationsCount) {
+    const items = [
         { to: '/app/notifications', label: 'Notifications', badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : null },
         { to: '/app/profile', label: 'Profile' },
     ];
@@ -25,37 +32,6 @@ function getPrimaryNavigationItems(user, unreadNotificationsCount) {
     }
 
     return items;
-}
-
-function getSidebarSections(user, unreadNotificationsCount) {
-    const sections = [
-        {
-            title: 'Main',
-            items: [
-                { to: '/app', label: 'Dashboard', icon: 'DB' },
-                { to: '/app/questions', label: 'Questions', icon: 'Q' },
-                { to: '/app/blogs', label: 'Blogs', icon: 'BL' },
-            ],
-        },
-        {
-            title: 'Account',
-            items: [
-                { to: '/app/notifications', label: 'Notifications', icon: 'NT', badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : null },
-                { to: '/app/profile', label: 'Profile', icon: 'PR' },
-            ],
-        },
-    ];
-
-    if (isAdmin(user)) {
-        sections.push({
-            title: 'Admin',
-            items: [
-                { to: '/app/admin/badges-interests', label: 'Admin Lab', icon: 'AD' },
-            ],
-        });
-    }
-
-    return sections;
 }
 
 function getRoleTheme(user) {
@@ -95,6 +71,34 @@ function getRoleTheme(user) {
         description: 'Move between questions, blogs, notifications, and your profile without losing your rhythm.',
         spotlight: 'Student focus',
         gradient: 'from-[#29CFFF]/20 via-[#A34DFF]/10 to-transparent',
+    };
+}
+
+function getRoleAccent(user) {
+    if (isAdmin(user)) {
+        return {
+            ring: 'from-[#FFD327] via-[#FF9F1C] to-[#25F2A0]',
+            badge: 'bg-[#FFD327] text-black',
+        };
+    }
+
+    if (isFormateur(user)) {
+        return {
+            ring: 'from-[#25F2A0] via-[#29CFFF] to-[#A8FF6A]',
+            badge: 'bg-[#25F2A0] text-black',
+        };
+    }
+
+    if (isBdeMembre(user)) {
+        return {
+            ring: 'from-[#FF66D6] via-[#FFD327] to-[#FF9F1C]',
+            badge: 'bg-[#FF66D6] text-black',
+        };
+    }
+
+    return {
+        ring: 'from-[#29CFFF] via-[#25F2A0] to-[#FFD327]',
+        badge: 'bg-[#29CFFF] text-black',
     };
 }
 
@@ -153,42 +157,54 @@ export function AppLayout() {
     const { signOut, user } = useAuth();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+    const [profileBadgeCount, setProfileBadgeCount] = useState(0);
+    const [profileReputation, setProfileReputation] = useState(0);
     const [isCommunityMenuOpen, setIsCommunityMenuOpen] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
     const communityMenuRef = useRef(null);
     const profileMenuRef = useRef(null);
-    const navigationItems = getPrimaryNavigationItems(user, unreadNotificationsCount);
-    const sidebarSections = getSidebarSections(user, unreadNotificationsCount);
+    const navigationItems = getPrimaryNavigationItems();
+    const controlRoomItems = getControlRoomItems(user, unreadNotificationsCount);
     const roleTheme = useMemo(() => getRoleTheme(user), [user]);
+    const roleAccent = useMemo(() => getRoleAccent(user), [user]);
     const avatarFallback = getInitials(user?.name);
 
     useEffect(() => {
         let isMounted = true;
 
-        async function loadUnreadNotificationsCount() {
+        async function loadHeaderDetails() {
             if (!user?.id) {
                 setUnreadNotificationsCount(0);
+                setProfileBadgeCount(0);
+                setProfileReputation(0);
                 return;
             }
 
             try {
-                const response = await getNotifications();
+                const [notificationsResponse, userProfile] = await Promise.all([
+                    getNotifications(),
+                    getUser(user.id),
+                ]);
 
                 if (!isMounted) {
                     return;
                 }
 
-                setUnreadNotificationsCount(response?.unread_count || 0);
+                setUnreadNotificationsCount(notificationsResponse?.unread_count || 0);
+                setProfileBadgeCount(userProfile?.badges?.length || 0);
+                setProfileReputation(userProfile?.reputation || 0);
             } catch {
                 if (!isMounted) {
                     return;
                 }
 
                 setUnreadNotificationsCount(0);
+                setProfileBadgeCount(0);
+                setProfileReputation(0);
             }
         }
 
-        loadUnreadNotificationsCount();
+        loadHeaderDetails();
 
         return () => {
             isMounted = false;
@@ -237,49 +253,51 @@ export function AppLayout() {
             <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(163,77,255,0.18),transparent_20%),radial-gradient(circle_at_20%_35%,rgba(37,242,160,0.08),transparent_18%),radial-gradient(circle_at_80%_20%,rgba(255,102,214,0.08),transparent_16%)]" />
 
             <header className="sticky top-0 z-30 border-b border-white/10 bg-[#070311]/95 px-4 py-3 backdrop-blur-xl lg:px-6">
-                <div className="flex flex-wrap items-center gap-4">
-                    <Link to="/app" className="shrink-0">
-                        <YouConnectLogo compact showTag={false} className="max-w-[210px]" />
-                    </Link>
+                <div className="flex flex-wrap items-center gap-4 xl:grid xl:grid-cols-[auto_1fr_auto] xl:items-center xl:gap-6">
+                    <div className="flex items-center gap-4">
+                        <Link to="/app" className="shrink-0">
+                            <YouConnectLogo compact showTag={false} className="max-w-[210px]" />
+                        </Link>
 
-                    <div ref={communityMenuRef} className="relative">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setIsCommunityMenuOpen((current) => !current);
-                                setIsProfileMenuOpen(false);
-                            }}
-                            className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-black text-[#FFF3DC] transition hover:bg-white/10"
-                        >
-                            {roleTheme.spotlight}
-                        </button>
+                        <div ref={communityMenuRef} className="relative">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsCommunityMenuOpen((current) => !current);
+                                    setIsProfileMenuOpen(false);
+                                }}
+                                className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-black text-[#FFF3DC] transition hover:bg-white/10"
+                            >
+                                {roleTheme.spotlight}
+                            </button>
 
-                        {isCommunityMenuOpen ? (
-                            <div className="absolute left-0 z-20 mt-3 w-[280px] rounded-[1.6rem] border border-white/10 bg-[#0B0126] p-4 shadow-[8px_8px_0_rgba(0,0,0,0.85)]">
-                                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#25F2A0]">Workspace sections</p>
-                                <div className="mt-3 grid gap-2">
-                                    {navigationItems.map((item) => (
-                                        <Link
-                                            key={item.to}
-                                            to={item.to}
-                                            className="rounded-[1rem] border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#d8cfbd] transition hover:bg-white/10 hover:text-white"
-                                        >
-                                            <span className="flex items-center justify-between gap-3">
-                                                <span>{item.label}</span>
-                                                {item.badge ? (
-                                                    <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[#1E2234] px-2 py-1 text-[10px] font-black leading-none text-[#FFF3DC]">
-                                                        {item.badge}
-                                                    </span>
-                                                ) : null}
-                                            </span>
-                                        </Link>
-                                    ))}
+                            {isCommunityMenuOpen ? (
+                                <div className="absolute left-0 z-20 mt-3 w-[280px] rounded-[1.6rem] border border-white/10 bg-[#0B0126] p-4 shadow-[8px_8px_0_rgba(0,0,0,0.85)]">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#25F2A0]">Workspace sections</p>
+                                    <div className="mt-3 grid gap-2">
+                                        {controlRoomItems.map((item) => (
+                                            <Link
+                                                key={item.to}
+                                                to={item.to}
+                                                className="rounded-[1rem] border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#d8cfbd] transition hover:bg-white/10 hover:text-white"
+                                            >
+                                                <span className="flex items-center justify-between gap-3">
+                                                    <span>{item.label}</span>
+                                                    {item.badge ? (
+                                                        <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[#1E2234] px-2 py-1 text-[10px] font-black leading-none text-[#FFF3DC]">
+                                                            {item.badge}
+                                                        </span>
+                                                    ) : null}
+                                                </span>
+                                            </Link>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        ) : null}
+                            ) : null}
+                        </div>
                     </div>
 
-                    <nav className="hidden flex-1 items-center gap-2 xl:flex">
+                    <nav className="hidden items-center justify-center gap-2 xl:flex">
                         {navigationItems.map((item) => (
                             <NavLink
                                 key={item.to}
@@ -306,7 +324,7 @@ export function AppLayout() {
                         ))}
                     </nav>
 
-                    <div className="ml-auto flex items-center gap-3">
+                    <div className="ml-auto flex items-center gap-3 xl:ml-0 xl:justify-self-end">
                         <label className="hidden items-center gap-3 rounded-full border border-white/10 bg-[#0B0126] px-4 py-2 text-sm text-[#d8cfbd] lg:flex">
                             <SearchIcon />
                             <input
@@ -336,22 +354,36 @@ export function AppLayout() {
                                     setIsProfileMenuOpen((current) => !current);
                                     setIsCommunityMenuOpen(false);
                                 }}
-                                className="flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-3 py-2 shadow-[4px_4px_0_rgba(0,0,0,0.7)] transition hover:bg-white/10"
+                                className="group flex items-center gap-3 rounded-[1.6rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.03)_100%)] px-3 py-2.5 shadow-[4px_4px_0_rgba(0,0,0,0.7)] transition hover:border-white/15 hover:bg-[linear-gradient(135deg,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0.05)_100%)]"
                             >
-                                {user?.photo ? (
-                                    <img
-                                        src={user.photo}
-                                        alt={user.name}
-                                        className="h-10 w-10 rounded-full border-2 border-black object-cover"
-                                    />
-                                ) : (
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-black bg-[linear-gradient(135deg,#29CFFF_0%,#25F2A0_58%,#FFD327_100%)] text-sm font-black text-black">
-                                        {avatarFallback}
-                                    </div>
-                                )}
+                                <div className={`rounded-full bg-gradient-to-br p-[2px] ${roleAccent.ring}`}>
+                                    {user?.photo ? (
+                                        <img
+                                            src={user.photo}
+                                            alt={user.name}
+                                            className="h-11 w-11 rounded-full border border-black/80 object-cover"
+                                        />
+                                    ) : (
+                                        <div className="flex h-11 w-11 items-center justify-center rounded-full border border-black/80 bg-[#05020d] text-sm font-black text-[#FFF3DC]">
+                                            {avatarFallback}
+                                        </div>
+                                    )}
+                                </div>
                                 <div className="hidden text-left md:block">
                                     <p className="text-sm font-black text-[#FFF3DC]">{user?.name || 'Workspace user'}</p>
-                                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#d8cfbd]">{getRoleLabel(user)}</p>
+                                    <div className="mt-1 flex items-center gap-2">
+                                        <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${roleAccent.badge}`}>
+                                            {getRoleLabel(user)}
+                                        </span>
+                                        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#d8cfbd]">
+                                            {profileReputation} reputation
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="hidden rounded-full border border-white/10 bg-white/5 px-2.5 py-1 md:block">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#FFF3DC]">
+                                        {profileBadgeCount} badges
+                                    </span>
                                 </div>
                             </button>
 
@@ -363,17 +395,25 @@ export function AppLayout() {
                                     </div>
 
                                     <div className="mt-3 grid gap-2">
-                                        <Link to="/app/profile" className="rounded-[1rem] border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#d8cfbd] transition hover:bg-white/10 hover:text-white">
+                                        <Link
+                                            to="/app/profile"
+                                            className="rounded-[1rem] border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#d8cfbd] transition hover:bg-white/10 hover:text-white"
+                                        >
                                             View profile
                                         </Link>
-                                        <Link to="/app/notifications" className="rounded-[1rem] border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#d8cfbd] transition hover:bg-white/10 hover:text-white">
-                                            Notifications
-                                        </Link>
-                                        {isAdmin(user) ? (
-                                            <Link to="/app/admin/badges-interests" className="rounded-[1rem] border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#d8cfbd] transition hover:bg-white/10 hover:text-white">
-                                                Admin lab
-                                            </Link>
-                                        ) : null}
+                                        <div className="rounded-[1rem] border border-white/10 bg-white/5 px-4 py-3">
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div>
+                                                    <p className="text-sm font-bold text-[#FFF3DC]">Badges</p>
+                                                    <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#d8cfbd]">
+                                                        Earned on your profile
+                                                    </p>
+                                                </div>
+                                                <span className="inline-flex min-w-8 items-center justify-center rounded-full bg-[#FFD327] px-2.5 py-1 text-[11px] font-black leading-none text-black">
+                                                    {profileBadgeCount}
+                                                </span>
+                                            </div>
+                                        </div>
                                         <button
                                             type="button"
                                             onClick={handleLogout}
@@ -390,73 +430,7 @@ export function AppLayout() {
                 </div>
             </header>
 
-            <div className="relative lg:grid lg:grid-cols-[280px_1fr]">
-                <aside className="hidden border-r border-white/10 bg-[#080413]/92 px-5 py-8 lg:block">
-                    <div className="sticky top-[92px]">
-                        <div className="rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(8,4,19,0.98)_0%,rgba(10,6,22,0.98)_100%)] p-5 shadow-[6px_6px_0_rgba(0,0,0,0.8)]">
-                            <div className="rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0.02)_100%)] px-4 py-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="rounded-full border border-white/10 bg-[#0B0126] p-2 text-[#d8cfbd]">
-                                        <GridIcon />
-                                    </div>
-                                    <div>
-                                        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#25F2A0]">
-                                            {roleTheme.spotlight}
-                                        </p>
-                                        <p className="mt-1 text-xl font-black text-[#FFF3DC]">Workspace</p>
-                                    </div>
-                                </div>
-                                <p className="mt-3 max-w-[18rem] text-sm leading-6 text-[#bfb5c7]">
-                                    Keep the navigation focused on the pages you actually use in YouConnect.
-                                </p>
-                            </div>
-
-                            <div className="mt-8 space-y-8">
-                                {sidebarSections.map((section) => (
-                                    <div key={section.title}>
-                                        <div className="mb-4 flex items-center justify-between px-2">
-                                            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#8f8798]">
-                                                {section.title}
-                                            </p>
-                                            <span className="h-px flex-1 bg-white/8 ml-3" />
-                                        </div>
-
-                                        <div className="grid gap-1.5">
-                                            {section.items.map((item) => (
-                                                <NavLink
-                                                    key={`${section.title}-${item.to}`}
-                                                    to={item.to}
-                                                    end={item.to === '/app'}
-                                                    className={({ isActive }) =>
-                                                        [
-                                                            'group flex items-center justify-between gap-3 rounded-[1rem] px-3 py-3 transition',
-                                                            isActive
-                                                                ? 'bg-[linear-gradient(135deg,rgba(48,52,97,0.96)_0%,rgba(27,30,58,0.96)_100%)] text-[#FFF3DC] shadow-[0_8px_24px_rgba(0,0,0,0.28)]'
-                                                                : 'text-[#e7dfd2] hover:bg-white/6',
-                                                        ].join(' ')
-                                                    }
-                                                >
-                                                    <span className="flex min-w-0 items-center gap-3">
-                                                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/6 bg-white/5 text-[10px] font-black uppercase tracking-[0.08em] text-[#FFD327] transition group-hover:border-white/12 group-hover:bg-white/8">
-                                                            {item.icon}
-                                                        </span>
-                                                        <span className="truncate text-[1.02rem] font-black">{item.label}</span>
-                                                    </span>
-                                                    {item.badge ? (
-                                                        <span className="inline-flex min-w-7 items-center justify-center rounded-[0.7rem] border border-white/10 bg-white/10 px-2 py-1 text-[11px] font-black leading-none text-[#FFF3DC]">
-                                                            {item.badge}
-                                                        </span>
-                                                    ) : null}
-                                                </NavLink>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </aside>
-
+            <div className="relative">
                 <div className="min-h-screen">
                     <div className="border-b border-white/10 px-4 py-5 lg:hidden">
                         <div className="flex gap-3 overflow-x-auto">

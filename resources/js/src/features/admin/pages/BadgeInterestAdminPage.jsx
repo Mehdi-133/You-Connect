@@ -472,7 +472,7 @@ export function BadgeInterestAdminPage() {
                 </div>
             </SectionCard>
 
-            <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+            <div className="grid items-start gap-6 xl:grid-cols-[1.1fr_0.9fr]">
                 <section className="grid gap-6">
                     <SectionCard eyebrow="Badge catalog" title="Create and refine achievements" description="A strong badge library feels curated, specific, and easy to award.">
                         <form onSubmit={handleSaveBadge} className="grid gap-4 rounded-[2rem] border border-white/10 bg-white/5 p-5 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
@@ -593,8 +593,8 @@ export function BadgeInterestAdminPage() {
                     </SectionCard>
                 </section>
 
-                <SectionCard eyebrow="Badge assignment" title="Choose a user, then award intentionally" description="This panel keeps assignment separate from catalog management so admin work stays clear and deliberate." className="overflow-hidden">
-                    <div className="rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.03)_100%)] p-5 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
+                <SectionCard eyebrow="Badge assignment" title="Choose a user, then award intentionally" description="This panel keeps assignment separate from catalog management so admin work stays clear and deliberate." className="self-start overflow-hidden">
+                    <div className="rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.03)_100%)] p-5 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
                         <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#A8FF6A]">Target user</label>
                         <select value={selectedUserId} onChange={(event) => setSelectedUserId(event.target.value)} className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none">
                             <option value="">Choose a user</option>
@@ -610,13 +610,13 @@ export function BadgeInterestAdminPage() {
                         <p className="mt-6 text-sm leading-7 text-[rgb(var(--fg-muted))]">Loading selected user profile...</p>
                     ) : selectedUserProfile ? (
                         <div className="mt-6 grid gap-4">
-                            <div className="rounded-[2rem] border border-white/10 bg-white/5 p-5 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
+                            <div className="rounded-[1.8rem] border border-white/10 bg-white/5 p-4 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
                                 <p className="text-xs font-black uppercase tracking-[0.16em] text-[#A8FF6A]">Selected profile</p>
-                                <h3 className="mt-3 font-display text-3xl font-extrabold leading-none text-[#FFF3DC]">{selectedUserProfile.name}</h3>
+                                <h3 className="mt-3 font-display text-2xl font-extrabold leading-none text-[#FFF3DC]">{selectedUserProfile.name}</h3>
                                 <p className="mt-2 text-sm text-[#d8cfbd]">{selectedUserProfile.email}</p>
-                                <p className="mt-4 text-sm leading-7 text-[#d8cfbd]">{selectedUserProfile.bio || 'No bio added yet.'}</p>
+                                <p className="mt-3 text-sm leading-6 text-[#d8cfbd] line-clamp-3">{selectedUserProfile.bio || 'No bio added yet.'}</p>
                             </div>
-                            <div className="rounded-[2rem] border border-white/10 bg-white/5 p-5 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
+                            <div className="rounded-[1.8rem] border border-white/10 bg-white/5 p-4 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
                                 <p className="text-xs font-black uppercase tracking-[0.16em] text-[#FFD327]">Assign badge</p>
                                 <div className="mt-3 flex flex-col gap-3">
                                     <select value={selectedBadgeId} onChange={(event) => setSelectedBadgeId(event.target.value)} className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none">
@@ -632,7 +632,7 @@ export function BadgeInterestAdminPage() {
                                 {badgeError ? <p className="mt-3 text-sm font-bold text-[#FFD327]">{badgeError}</p> : null}
                                 {badgeMessage ? <p className="mt-3 text-sm font-bold text-[#25F2A0]">{badgeMessage}</p> : null}
                             </div>
-                            <div className="rounded-[2rem] border border-white/10 bg-white/5 p-5 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
+                            <div className="rounded-[1.8rem] border border-white/10 bg-white/5 p-4 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
                                 <div className="flex items-center justify-between gap-3">
                                     <p className="font-display text-2xl font-extrabold leading-none text-[#FFF3DC]">Assigned badges</p>
                                     <span className="rounded-full bg-[#FFD327] px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-black">
@@ -640,14 +640,14 @@ export function BadgeInterestAdminPage() {
                                     </span>
                                 </div>
                                 {selectedUserProfile.badges?.length ? (
-                                    <div className="mt-4 grid gap-3">
+                                    <div className="mt-4 max-h-[260px] space-y-2 overflow-y-auto pr-1">
                                         {selectedUserProfile.badges.map((badge) => (
-                                            <div key={badge.id} className="flex flex-wrap items-center justify-between gap-3 rounded-[1.3rem] border border-white/10 bg-[#0B0126]/70 px-4 py-3">
-                                                <div>
-                                                    <p className="font-bold text-[#FFF3DC]">{badge.name}</p>
+                                            <div key={badge.id} className="flex flex-wrap items-center justify-between gap-3 rounded-[1.15rem] border border-white/10 bg-[#0B0126]/70 px-3 py-2.5">
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="truncate font-bold text-[#FFF3DC]">{badge.name}</p>
                                                     <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#d8cfbd]">{badge.points_required} points</p>
                                                 </div>
-                                                <button type="button" onClick={() => handleRevokeAssignedBadge(badge.id)} disabled={processingBadgeId === badge.id} className="rounded-full border border-[#ff8f8f]/40 bg-[#2a0b15] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#ffb8b8] disabled:cursor-not-allowed disabled:opacity-60">
+                                                <button type="button" onClick={() => handleRevokeAssignedBadge(badge.id)} disabled={processingBadgeId === badge.id} className="rounded-full border border-[#ff8f8f]/40 bg-[#2a0b15] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#ffb8b8] disabled:cursor-not-allowed disabled:opacity-60">
                                                     {processingBadgeId === badge.id ? 'Revoking...' : 'Revoke'}
                                                 </button>
                                             </div>
@@ -655,6 +655,30 @@ export function BadgeInterestAdminPage() {
                                     </div>
                                 ) : (
                                     <p className="mt-4 text-sm leading-7 text-[rgb(var(--fg-muted))]">This user does not have any badges yet.</p>
+                                )}
+                            </div>
+                            <div className="rounded-[1.8rem] border border-white/10 bg-white/5 p-4 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="font-display text-2xl font-extrabold leading-none text-[#FFF3DC]">Selected interests</p>
+                                    <span className="rounded-full bg-[#29CFFF] px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-black">
+                                        {selectedUserProfile.interests?.length ?? 0}
+                                    </span>
+                                </div>
+                                {selectedUserProfile.interests?.length ? (
+                                    <div className="mt-4 max-h-[220px] overflow-y-auto pr-1">
+                                        <div className="flex flex-wrap gap-2">
+                                            {selectedUserProfile.interests.map((interest) => (
+                                                <span
+                                                    key={interest.id}
+                                                    className="rounded-full border border-white/10 bg-[#071b2c] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#8de1ff]"
+                                                >
+                                                    {interest.name}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="mt-4 text-sm leading-7 text-[rgb(var(--fg-muted))]">This user has not selected any interests yet.</p>
                                 )}
                             </div>
                         </div>

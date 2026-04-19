@@ -10,6 +10,8 @@ import { QuestionsPage } from '../features/questions/pages/QuestionsPage';
 import { QuestionDetailsPage } from '../features/questions/pages/QuestionDetailsPage';
 import { BlogsPage } from '../features/blogs/pages/BlogsPage';
 import { BlogDetailsPage } from '../features/blogs/pages/BlogDetailsPage';
+import { ClubsPage } from '../features/clubs/pages/ClubsPage';
+import { ClubDetailsPage } from '../features/clubs/pages/ClubDetailsPage';
 import { NotificationsPage } from '../features/notifications/pages/NotificationsPage';
 import { ProfilePage } from '../features/profile/pages/ProfilePage';
 import { BadgeInterestAdminPage } from '../features/admin/pages/BadgeInterestAdminPage';
@@ -45,6 +47,8 @@ export function AppRouter() {
                 <Route path="/app/questions/:questionId" element={<QuestionDetailsPage />} />
                 <Route path="/app/blogs" element={<BlogsPage />} />
                 <Route path="/app/blogs/:blogId" element={<BlogDetailsPage />} />
+                <Route path="/app/clubs" element={<ClubsPage />} />
+                <Route path="/app/clubs/:clubId" element={<ClubDetailsPage />} />
                 <Route path="/app/notifications" element={<NotificationsPage />} />
                 <Route path="/app/profile" element={<ProfilePage />} />
                 <Route
