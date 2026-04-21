@@ -14,14 +14,14 @@ enum UserRole: string
     public function isAtLeast(self $role): bool
     {
         $hierarchy = [
-            self::Visitor => 0,
-            self::Student => 1,
-            self::BdeMembre => 2,
-            self::Formateur => 2,
-            self::Admin => 3,
+            self::Visitor->value => 0,
+            self::Student->value => 1,
+            self::BdeMembre->value => 2,
+            self::Formateur->value => 2,
+            self::Admin->value => 3,
         ];
 
-        return $hierarchy[$this] >= $hierarchy[$role];
+        return $hierarchy[$this->value] >= $hierarchy[$role->value];
     }
 
     // human readable label for API responses

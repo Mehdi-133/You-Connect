@@ -59,6 +59,10 @@ function getStatusLabel(status) {
 }
 
 function isUserAttending(eventItem, userId) {
+    if (typeof eventItem?.is_attending === 'boolean') {
+        return eventItem.is_attending;
+    }
+
     return Boolean(eventItem?.attendees?.some((attendee) => attendee.id === userId));
 }
 
@@ -135,6 +139,7 @@ export function EventDetailsPage() {
                         ...previous,
                         attendees_count: Math.max(0, (previous.attendees_count || 0) - 1),
                         attendees: (previous.attendees || []).filter((attendee) => attendee.id !== user.id),
+                        is_attending: false,
                     };
                 });
             } else {
@@ -154,6 +159,7 @@ export function EventDetailsPage() {
                         ...previous,
                         attendees_count: (previous.attendees_count || 0) + 1,
                         attendees: nextAttendees,
+                        is_attending: true,
                     };
                 });
             }
@@ -187,6 +193,11 @@ export function EventDetailsPage() {
                 description={eventItem.description || 'Event details and attendee list.'}
                 accent="bg-[linear-gradient(135deg,#29CFFF_0%,#25F2A0_55%,#FFD327_100%)]"
             >
+                {eventItem.photo ? (
+                    <div className="mt-5 overflow-hidden rounded-[1.8rem] border border-white/10 bg-black/40">
+                        <img src={eventItem.photo} alt="" className="h-56 w-full object-cover opacity-95" loading="lazy" />
+                    </div>
+                ) : null}
                 <div className="mt-6 flex flex-wrap items-center gap-3">
                     <Link
                         to="/app/events"
@@ -286,4 +297,3 @@ export function EventDetailsPage() {
         </div>
     );
 }
-

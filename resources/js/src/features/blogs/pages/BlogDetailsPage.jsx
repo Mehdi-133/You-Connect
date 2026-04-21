@@ -408,13 +408,19 @@ export function BlogDetailsPage() {
                     <p className="mt-4 text-sm font-bold text-[#FFD327]">{interactionError}</p>
                 ) : null}
 
-                <div className="relative mt-8 overflow-hidden rounded-[2.3rem] border-2 border-black bg-[linear-gradient(145deg,#FFF3DC_0%,#ffe7a6_100%)] p-8 text-black shadow-[8px_8px_0_rgba(0,0,0,0.85)]">
+                <div className="relative mt-8 overflow-hidden rounded-[2.1rem] border-2 border-black bg-[linear-gradient(145deg,#FFF3DC_0%,#ffe7a6_100%)] p-6 text-black shadow-[8px_8px_0_rgba(0,0,0,0.85)] md:p-7">
                     <div className="absolute right-5 top-5 h-5 w-5 rounded-full bg-[#FF66D6]" />
                     <div className="absolute right-12 top-10 h-3 w-3 rounded-full bg-[#29CFFF]" />
                     <p className="text-xs font-black uppercase tracking-[0.22em] text-[#7b5c3d]">
                         YouConnect editorial
                     </p>
-                    <h1 className="mt-4 font-display text-5xl font-extrabold leading-[0.95]">
+
+                    {blog.photo ? (
+                        <div className="mt-5 overflow-hidden rounded-[1.8rem] border-2 border-black bg-white shadow-[6px_6px_0_rgba(0,0,0,0.22)]">
+                            <img src={blog.photo} alt="" className="h-64 w-full object-cover md:h-72" loading="lazy" />
+                        </div>
+                    ) : null}
+                    <h1 className="mt-5 font-display text-4xl font-extrabold leading-[1.02] md:text-5xl md:leading-[0.98]">
                         {blog.title}
                     </h1>
 
@@ -476,9 +482,11 @@ export function BlogDetailsPage() {
                         </div>
                     </form>
                 ) : (
-                    <p className="mt-8 max-w-4xl text-base leading-9 text-[#3d332c]">
-                        {blog.content}
-                    </p>
+                    <div className="mt-8 max-w-4xl">
+                        <p className="text-[1rem] leading-8 text-[#3d332c] whitespace-pre-line md:text-[1.05rem] md:leading-9">
+                            {blog.content}
+                        </p>
+                    </div>
                 )}
                 </div>
             </SectionCard>

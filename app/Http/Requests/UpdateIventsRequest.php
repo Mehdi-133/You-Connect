@@ -15,6 +15,7 @@ class UpdateIventsRequest extends FormRequest
     {
         return [
             'title'       => 'sometimes|string|max:255',
+            'photo'       => 'sometimes|url|max:2048',
             'description' => 'nullable|string',
             'location'    => 'nullable|string',
             'starts_at'   => 'sometimes|date',

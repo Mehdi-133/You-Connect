@@ -17,6 +17,7 @@ class Blog extends Model
         'title',
         'content',
         'slug',
+        'photo',
         'status',
         'like_count',
         'is_highlighted',
@@ -54,4 +55,3 @@ class Blog extends Model
 
 
 }
-

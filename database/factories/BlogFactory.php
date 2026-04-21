@@ -22,10 +22,12 @@ class BlogFactory extends Factory
     {
 
         $title = fake()->sentence();
+        $photoId = fake()->optional(0.75)->numberBetween(100, 1100);
         return [
             'title' => $title,
             'content' => fake()->paragraph(),
             'slug' => Str::slug($title) . '-' . Str::random(6),
+            'photo' => $photoId ? "https://picsum.photos/id/{$photoId}/1200/700" : null,
             'status' => 'pending',
             'like_count' => 0,
             'is_highlighted' => false,

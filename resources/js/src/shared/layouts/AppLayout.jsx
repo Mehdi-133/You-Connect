@@ -31,6 +31,7 @@ function getControlRoomItems(user, unreadNotificationsCount) {
 
     if (isAdmin(user)) {
         items.splice(1, 0, { to: '/app/admin/badges-interests', label: 'Admin Lab' });
+        items.splice(2, 0, { to: '/app/admin/tags', label: 'Tags' });
     }
 
     return items;
@@ -294,10 +295,11 @@ export function AppLayout() {
                                 end={item.to === '/app'}
                                 className={({ isActive }) =>
                                     [
-                                        'rounded-full px-4 py-2 text-sm font-black transition',
+                                        'group relative rounded-full px-4 py-2 text-sm font-black transition',
+                                        'after:pointer-events-none after:absolute after:inset-x-5 after:-bottom-1 after:h-[2px] after:rounded-full after:bg-[linear-gradient(90deg,#29CFFF_0%,#25F2A0_45%,#FFD327_100%)] after:opacity-0 after:transition after:duration-200',
                                         isActive
-                                            ? 'bg-white/12 text-[#FFF3DC]'
-                                            : 'text-[#d8cfbd] hover:bg-white/8 hover:text-white',
+                                            ? 'bg-white/12 text-[#FFF3DC] shadow-[0_10px_24px_rgba(0,0,0,0.35)] hover:bg-white/16 after:opacity-100'
+                                            : 'text-[#d8cfbd] hover:bg-white/10 hover:text-white hover:shadow-[0_10px_24px_rgba(0,0,0,0.28)] group-hover:after:opacity-100',
                                     ].join(' ')
                                 }
                             >
@@ -423,10 +425,10 @@ export function AppLayout() {
                                     end={item.to === '/app'}
                                     className={({ isActive }) =>
                                         [
-                                            'whitespace-nowrap rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.14em]',
+                                            'whitespace-nowrap rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.14em] transition',
                                             isActive
-                                                ? 'bg-[#FFD327] text-black'
-                                                : 'border border-white/10 bg-white/5 text-[#d8cfbd]',
+                                                ? 'bg-[#FFD327] text-black shadow-[0_10px_24px_rgba(0,0,0,0.35)] hover:bg-[#ffd94f]'
+                                                : 'border border-white/10 bg-white/5 text-[#d8cfbd] hover:bg-white/10 hover:text-white',
                                         ].join(' ')
                                     }
                                 >

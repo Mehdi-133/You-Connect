@@ -15,6 +15,7 @@ export function BlogsPage() {
     const [error, setError] = useState('');
     const [form, setForm] = useState({
         title: '',
+        photo: '',
         content: '',
     });
     const [formError, setFormError] = useState('');
@@ -106,6 +107,7 @@ export function BlogsPage() {
             setBlogs((currentBlogs) => [createdBlog, ...currentBlogs]);
             setForm({
                 title: '',
+                photo: '',
                 content: '',
             });
             setSelectedFilter('Featured');
@@ -217,6 +219,23 @@ export function BlogsPage() {
                         />
                         {fieldErrors.title ? (
                             <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.title[0]}</p>
+                        ) : null}
+                    </div>
+
+                    <div>
+                        <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                            Photo URL (optional)
+                        </label>
+                        <input
+                            type="text"
+                            name="photo"
+                            value={form.photo}
+                            onChange={handleInputChange}
+                            placeholder="https://..."
+                            className="w-full rounded-[1.4rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
+                        />
+                        {fieldErrors.photo ? (
+                            <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.photo[0]}</p>
                         ) : null}
                     </div>
 

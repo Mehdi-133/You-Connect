@@ -43,6 +43,7 @@ class BlogController extends Controller
             'title' => $request->input('title'),
             'content' => $request->input('content'),
             'slug' => Str::slug($request->input('title')) . '-' . Str::random(6),
+            'photo' => $request->input('photo'),
             'you_coder_id' => $request->user()->id,
             'status' => 'pending',
         ]);
@@ -93,7 +94,7 @@ class BlogController extends Controller
     public function update(UpdateBlogRequest $request, Blog $blog)
     {
         $this->authorize('update', $blog);
-        $blog->update($request->only(['title', 'content']));
+        $blog->update($request->only(['title', 'content', 'photo']));
         return response()->json($blog);
     }
 

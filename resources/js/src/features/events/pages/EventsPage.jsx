@@ -60,6 +60,10 @@ function getStatusLabel(status) {
 }
 
 function isUserAttending(eventItem, userId) {
+    if (typeof eventItem?.is_attending === 'boolean') {
+        return eventItem.is_attending;
+    }
+
     return Boolean(eventItem?.attendees?.some((attendee) => attendee.id === userId));
 }
 
@@ -72,6 +76,7 @@ export function EventsPage() {
     const [processingEventId, setProcessingEventId] = useState(null);
     const [form, setForm] = useState({
         title: '',
+        photo: '',
         description: '',
         location: '',
         starts_at: '',
@@ -169,6 +174,7 @@ export function EventsPage() {
                                     photo: user.photo || null,
                                 },
                             ],
+                        is_attending: !isAttending,
                         attendees_count: isAttending
                             ? Math.max(0, (item.attendees_count || currentAttendees.length || 0) - 1)
                             : (item.attendees_count || currentAttendees.length || 0) + 1,
@@ -178,7 +184,7 @@ export function EventsPage() {
 
             setFeedbackMessage(isAttending ? 'You left the event.' : 'You joined the event.');
         } catch (requestError) {
-            setError(
+            setFeedbackMessage(
                 requestError.response?.data?.message ||
                 'We could not update your event attendance right now.'
             );
@@ -192,6 +198,12 @@ export function EventsPage() {
         setFormError('');
         setFieldErrors({});
         setSuccessMessage('');
+
+        if (!form.photo?.trim()) {
+            setFormError('Event photo is required.');
+            return;
+        }
+
         setIsCreating(true);
 
         try {
@@ -211,6 +223,7 @@ export function EventsPage() {
             ]);
             setForm({
                 title: '',
+                photo: '',
                 description: '',
                 location: '',
                 starts_at: '',
@@ -273,7 +286,7 @@ export function EventsPage() {
             >
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-[radial-gradient(circle_at_top_left,rgba(255,102,214,0.18),transparent_28%),radial-gradient(circle_at_top_right,rgba(41,207,255,0.16),transparent_24%),radial-gradient(circle_at_55%_10%,rgba(255,211,39,0.12),transparent_28%)]" />
 
-                <div className="relative grid gap-4 lg:grid-cols-3">
+                <div className="relative grid items-start gap-4 lg:grid-cols-3">
                     {featuredEvents.map((eventItem, index) => (
                         <div
                             key={eventItem.id}
@@ -313,6 +326,11 @@ export function EventsPage() {
                                 {fieldErrors.title ? <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.title[0]}</p> : null}
                             </div>
                             <div>
+                                <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">Photo URL</label>
+                                <input type="url" name="photo" required value={form.photo} onChange={handleInputChange} placeholder="https://..." className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none" />
+                                {fieldErrors.photo ? <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.photo[0]}</p> : null}
+                            </div>
+                            <div>
                                 <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">Location</label>
                                 <input type="text" name="location" value={form.location} onChange={handleInputChange} placeholder="YouCode campus hall" className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none" />
                                 {fieldErrors.location ? <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.location[0]}</p> : null}
@@ -348,12 +366,17 @@ export function EventsPage() {
 
             {feedbackMessage ? <p className="text-sm font-bold text-[#25F2A0]">{feedbackMessage}</p> : null}
 
-            <div className="grid gap-5 lg:grid-cols-2">
+            <div className="grid items-start gap-5 lg:grid-cols-2">
                 {events.map((eventItem) => {
                     const isAttending = isUserAttending(eventItem, user?.id);
 
                     return (
                         <article key={eventItem.id} className="surface festival-card rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.07)_0%,rgba(255,255,255,0.03)_100%)] p-6 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
+                            {eventItem.photo ? (
+                                <div className="mb-5 overflow-hidden rounded-[1.6rem] border border-white/10 bg-black/40">
+                                    <img src={eventItem.photo} alt="" className="h-44 w-full object-cover opacity-90" loading="lazy" />
+                                </div>
+                            ) : null}
                             <div className="flex flex-wrap items-center gap-2">
                                 <h2 className="font-display text-3xl font-extrabold leading-none text-[#FFF3DC]">{eventItem.title}</h2>
                                 <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${getStatusTone(eventItem.status)}`}>

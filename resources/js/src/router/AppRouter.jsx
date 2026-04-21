@@ -17,6 +17,7 @@ import { EventDetailsPage } from '../features/events/pages/EventDetailsPage';
 import { NotificationsPage } from '../features/notifications/pages/NotificationsPage';
 import { ProfilePage } from '../features/profile/pages/ProfilePage';
 import { BadgeInterestAdminPage } from '../features/admin/pages/BadgeInterestAdminPage';
+import { TagAdminPage } from '../features/admin/pages/TagAdminPage';
 import { ProtectedRoute } from './ProtectedRoute';
 import { isAdmin } from '../shared/utils/roles';
 
@@ -60,6 +61,14 @@ export function AppRouter() {
                     element={( 
                         <ProtectedRoute isAllowed={isAdmin(user)}>
                             <BadgeInterestAdminPage />
+                        </ProtectedRoute>
+                    )}
+                />
+                <Route
+                    path="/app/admin/tags"
+                    element={( 
+                        <ProtectedRoute isAllowed={isAdmin(user)}>
+                            <TagAdminPage />
                         </ProtectedRoute>
                     )}
                 />

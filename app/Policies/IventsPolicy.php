@@ -49,7 +49,7 @@ class IventsPolicy
 
     public function join(User $user, Ivents $ivents): bool
     {
-        return $user->isStudent() || $user->isFormateur();
+        return true;
     }
 
     public function forceDelete(User $user, Ivents $ivents): bool

@@ -104,6 +104,15 @@ export function QuestionsPage() {
         });
     }
 
+    function handleTagSelectChange(event) {
+        const selectedIds = Array.from(event.target.selectedOptions).map((option) => Number(option.value));
+
+        setForm((currentForm) => ({
+            ...currentForm,
+            tags: selectedIds.filter((value) => Number.isFinite(value)),
+        }));
+    }
+
     async function handleCreateQuestion(event) {
         event.preventDefault();
         setFormError('');
@@ -210,28 +219,33 @@ export function QuestionsPage() {
 
                     <div>
                         <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
-                            Tags
+                            What technology / topic does this question belong to?
                         </p>
-                        <div className="flex flex-wrap gap-2">
-                            {availableTags.map((tag) => {
-                                const isSelected = form.tags.includes(tag.id);
-
-                                return (
+                        <select
+                            multiple
+                            value={form.tags.map((id) => String(id))}
+                            onChange={handleTagSelectChange}
+                            className="w-full rounded-[1.4rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
+                        >
+                            {availableTags.map((tag) => (
+                                <option key={tag.id} value={tag.id}>
+                                    {tag.name}
+                                </option>
+                            ))}
+                        </select>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                            {availableTags
+                                .filter((tag) => form.tags.includes(tag.id))
+                                .map((tag) => (
                                     <button
                                         key={tag.id}
                                         type="button"
                                         onClick={() => toggleTag(tag.id)}
-                                        className={[
-                                            'rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.14em]',
-                                            isSelected
-                                                ? 'bg-[#FFD327] text-black'
-                                                : 'border border-white/10 bg-white/5 text-[#d8cfbd]',
-                                        ].join(' ')}
+                                        className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#FFF3DC] transition hover:bg-white/10"
                                     >
-                                        {tag.name}
+                                        {tag.name} ×
                                     </button>
-                                );
-                            })}
+                                ))}
                         </div>
                         {fieldErrors.tags ? (
                             <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.tags[0]}</p>

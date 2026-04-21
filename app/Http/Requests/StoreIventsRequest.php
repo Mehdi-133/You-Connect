@@ -15,6 +15,7 @@ class StoreIventsRequest extends FormRequest
     {
         return [
             'title'       => 'required|string|max:255',
+            'photo'       => 'required|url|max:2048',
             'description' => 'nullable|string',
             'location'    => 'nullable|string',
             'starts_at'   => 'required|date',

@@ -12,10 +12,19 @@ class IventsController extends Controller
     public function index()
     {
         $this->authorize('viewAny', Ivents::class);
-        return Ivents::with('creator:id,name,photo')
+
+        $userId = request()->user()?->id;
+        $query = Ivents::with('creator:id,name,photo')
             ->withCount('attendees')
-            ->latest()
-            ->paginate(10);
+            ->latest();
+
+        if ($userId) {
+            $query->withExists([
+                'attendees as is_attending' => fn ($subQuery) => $subQuery->where('you_coder_id', $userId),
+            ]);
+        }
+
+        return $query->paginate(10);
     }
 
     public function store(StoreIventsRequest $request)
@@ -24,6 +33,7 @@ class IventsController extends Controller
 
         $ivent = Ivents::create([
             'title'        => $request->input('title'),
+            'photo'        => $request->input('photo'),
             'description'  => $request->input('description'),
             'location'     => $request->input('location'),
             'starts_at'    => $request->input('starts_at'),
@@ -37,14 +47,22 @@ class IventsController extends Controller
     public function show(Ivents $ivent)
     {
         $this->authorize('view', $ivent);
-        return $ivent->load(['creator:id,name,photo', 'attendees:id,name,photo,bio'])
+
+        $ivent->load(['creator:id,name,photo', 'attendees:id,name,photo,bio'])
             ->loadCount('attendees');
+
+        $userId = request()->user()?->id;
+        if ($userId) {
+            $ivent->is_attending = $ivent->attendees()->where('you_coder_id', $userId)->exists();
+        }
+
+        return $ivent;
     }
 
     public function update(UpdateIventsRequest $request, Ivents $ivent)
     {
         $this->authorize('update', $ivent);
-        $ivent->update($request->only(['title', 'description', 'location', 'starts_at', 'ends_at', 'status']));
+        $ivent->update($request->only(['title', 'photo', 'description', 'location', 'starts_at', 'ends_at', 'status']));
         return response()->json($ivent);
     }
 

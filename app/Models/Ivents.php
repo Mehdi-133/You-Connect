@@ -12,6 +12,7 @@ class Ivents extends Model
 
     protected $fillable = [
         'title',
+        'photo',
         'description',
         'location',
         'starts_at',
