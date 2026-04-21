@@ -12,7 +12,16 @@ class QuestionsController extends Controller
     public function index()
     {
         $this->authorize('viewAny', Questions::class);
-        return Questions::with(['youCoder:id,name,photo', 'tags:id,name'])->latest()->paginate(10);
+        $tagId = request()->query('tag_id');
+
+        $query = Questions::with(['youCoder:id,name,photo', 'tags:id,name'])
+            ->latest();
+
+        if ($tagId) {
+            $query->whereHas('tags', fn ($tagQuery) => $tagQuery->where('tags.id', $tagId));
+        }
+
+        return $query->paginate(10);
     }
 
     public function store(StoreQuestionsRequest $request)

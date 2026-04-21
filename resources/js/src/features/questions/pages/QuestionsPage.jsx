@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { SectionCard } from '../../../shared/components/SectionCard';
 import { EmptyState } from '../../../shared/ui/feedback/EmptyState';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
@@ -10,7 +10,7 @@ import { QuestionFeedCard } from '../components/QuestionFeedCard';
 export function QuestionsPage() {
     const [questions, setQuestions] = useState([]);
     const [availableTags, setAvailableTags] = useState([]);
-    const [selectedTopic, setSelectedTopic] = useState('All topics');
+    const [selectedFilterTagId, setSelectedFilterTagId] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [form, setForm] = useState({
@@ -22,6 +22,9 @@ export function QuestionsPage() {
     const [fieldErrors, setFieldErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
+    const [isTagPickerOpen, setIsTagPickerOpen] = useState(false);
+    const [tagQuery, setTagQuery] = useState('');
+    const tagPickerRef = useRef(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -32,8 +35,8 @@ export function QuestionsPage() {
 
             try {
                 const [questionsResponse, tagsResponse] = await Promise.all([
-                    getQuestions(),
-                    getTags(),
+                    getQuestions(selectedFilterTagId ? { tag_id: selectedFilterTagId } : {}),
+                    getTags({ per_page: 100 }),
                 ]);
 
                 if (!isMounted) {
@@ -63,24 +66,54 @@ export function QuestionsPage() {
         return () => {
             isMounted = false;
         };
-    }, []);
+    }, [selectedFilterTagId]);
 
-    const topicItems = useMemo(() => {
-        const tagNames = questions.flatMap((question) => question.tags?.map((tag) => tag.name) || []);
-        const uniqueTagNames = [...new Set(tagNames)];
-
-        return ['All topics', ...uniqueTagNames.slice(0, 5)];
-    }, [questions]);
-
-    const filteredQuestions = useMemo(() => {
-        if (selectedTopic === 'All topics') {
-            return questions;
+    const selectedFilterTag = useMemo(() => {
+        if (!selectedFilterTagId) {
+            return null;
         }
 
-        return questions.filter((question) =>
-            question.tags?.some((tag) => tag.name === selectedTopic)
-        );
-    }, [questions, selectedTopic]);
+        return availableTags.find((tag) => String(tag.id) === String(selectedFilterTagId)) || null;
+    }, [availableTags, selectedFilterTagId]);
+
+    const filterTags = useMemo(() => {
+        return [...availableTags]
+            .sort((left, right) => {
+                const leftCount = left.questions_count ?? 0;
+                const rightCount = right.questions_count ?? 0;
+
+                if (rightCount !== leftCount) {
+                    return rightCount - leftCount;
+                }
+
+                return String(left.name || '').localeCompare(String(right.name || ''));
+            })
+            .slice(0, 10);
+    }, [availableTags]);
+
+    const tagPickerOptions = useMemo(() => {
+        const query = tagQuery.trim().toLowerCase();
+
+        if (!query) {
+            return availableTags;
+        }
+
+        return availableTags.filter((tag) => String(tag.name || '').toLowerCase().includes(query));
+    }, [availableTags, tagQuery]);
+
+    useEffect(() => {
+        function handleOutsideClick(event) {
+            if (tagPickerRef.current && !tagPickerRef.current.contains(event.target)) {
+                setIsTagPickerOpen(false);
+            }
+        }
+
+        document.addEventListener('mousedown', handleOutsideClick);
+
+        return () => {
+            document.removeEventListener('mousedown', handleOutsideClick);
+        };
+    }, []);
 
     function handleInputChange(event) {
         const { name, value } = event.target;
@@ -104,12 +137,10 @@ export function QuestionsPage() {
         });
     }
 
-    function handleTagSelectChange(event) {
-        const selectedIds = Array.from(event.target.selectedOptions).map((option) => Number(option.value));
-
+    function clearSelectedTags() {
         setForm((currentForm) => ({
             ...currentForm,
-            tags: selectedIds.filter((value) => Number.isFinite(value)),
+            tags: [],
         }));
     }
 
@@ -129,7 +160,7 @@ export function QuestionsPage() {
                 content: '',
                 tags: [],
             });
-            setSelectedTopic('All topics');
+            setSelectedFilterTagId('');
             setSuccessMessage('Question created successfully.');
         } catch (requestError) {
             const message =
@@ -221,31 +252,106 @@ export function QuestionsPage() {
                         <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
                             What technology / topic does this question belong to?
                         </p>
-                        <select
-                            multiple
-                            value={form.tags.map((id) => String(id))}
-                            onChange={handleTagSelectChange}
-                            className="w-full rounded-[1.4rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
-                        >
-                            {availableTags.map((tag) => (
-                                <option key={tag.id} value={tag.id}>
-                                    {tag.name}
-                                </option>
-                            ))}
-                        </select>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                            {availableTags
-                                .filter((tag) => form.tags.includes(tag.id))
-                                .map((tag) => (
-                                    <button
-                                        key={tag.id}
-                                        type="button"
-                                        onClick={() => toggleTag(tag.id)}
-                                        className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#FFF3DC] transition hover:bg-white/10"
-                                    >
-                                        {tag.name} ×
-                                    </button>
-                                ))}
+                        <div ref={tagPickerRef} className="relative">
+                            <button
+                                type="button"
+                                onClick={() => setIsTagPickerOpen((current) => !current)}
+                                className={[
+                                    'w-full rounded-[1.6rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-left text-sm text-white outline-none transition',
+                                    isTagPickerOpen ? 'ring-2 ring-[#25F2A0]/40' : 'hover:bg-[#0f0636]',
+                                ].join(' ')}
+                            >
+                                {form.tags.length ? (
+                                    <span className="flex flex-wrap items-center gap-2 pr-8">
+                                        {availableTags
+                                            .filter((tag) => form.tags.includes(tag.id))
+                                            .slice(0, 6)
+                                            .map((tag) => (
+                                                <span
+                                                    key={tag.id}
+                                                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#FFF3DC]"
+                                                >
+                                                    {tag.name}
+                                                    <span className="text-white/50">x</span>
+                                                </span>
+                                            ))}
+                                        {form.tags.length > 6 ? (
+                                            <span className="text-xs font-semibold text-white/60">
+                                                +{form.tags.length - 6} more
+                                            </span>
+                                        ) : null}
+                                    </span>
+                                ) : (
+                                    <span className="text-white/60">Pick topics (Laravel, React, Sanctum...)</span>
+                                )}
+                                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/60">
+                                    <svg viewBox="0 0 20 20" className="h-4 w-4 fill-none stroke-current stroke-[2]">
+                                        <path d="M5 7l5 6 5-6" />
+                                    </svg>
+                                </span>
+                            </button>
+
+                            {isTagPickerOpen ? (
+                                <div className="absolute left-0 right-0 z-20 mt-3 overflow-hidden rounded-[1.6rem] border border-white/10 bg-[#0B0126] shadow-[8px_8px_0_rgba(0,0,0,0.85)]">
+                                    <div className="border-b border-white/10 p-3">
+                                        <input
+                                            type="text"
+                                            value={tagQuery}
+                                            onChange={(event) => setTagQuery(event.target.value)}
+                                            placeholder="Search tags..."
+                                            className="w-full rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-white/40"
+                                        />
+                                    </div>
+                                    <div className="max-h-64 overflow-y-auto p-2">
+                                        {tagPickerOptions.length ? (
+                                            tagPickerOptions.map((tag) => {
+                                                const isSelected = form.tags.includes(tag.id);
+
+                                                return (
+                                                    <button
+                                                        key={tag.id}
+                                                        type="button"
+                                                        onClick={() => toggleTag(tag.id)}
+                                                        className={[
+                                                            'flex w-full items-center justify-between gap-3 rounded-[1.2rem] px-4 py-3 text-left text-sm font-bold transition',
+                                                            isSelected
+                                                                ? 'bg-white/10 text-white'
+                                                                : 'text-[#d8cfbd] hover:bg-white/8 hover:text-white',
+                                                        ].join(' ')}
+                                                    >
+                                                        <span className="min-w-0 truncate">{tag.name}</span>
+                                                        <span className={[
+                                                            'inline-flex h-6 min-w-6 items-center justify-center rounded-full px-2 text-[10px] font-black uppercase tracking-[0.14em]',
+                                                            isSelected ? 'bg-[#25F2A0] text-black' : 'border border-white/10 bg-white/5 text-white/70',
+                                                        ].join(' ')}>
+                                                            {isSelected ? 'On' : 'Off'}
+                                                        </span>
+                                                    </button>
+                                                );
+                                            })
+                                        ) : (
+                                            <div className="p-4 text-sm font-semibold text-white/60">
+                                                No tags match your search.
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {form.tags.length ? (
+                                        <div className="flex items-center justify-between gap-3 border-t border-white/10 p-3">
+                                            <p className="text-xs font-semibold text-white/60">
+                                                {form.tags.length} selected
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={clearSelectedTags}
+                                                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#FFF3DC] transition hover:bg-white/10"
+                                            >
+                                                Clear
+                                            </button>
+                                        </div>
+                                    ) : null}
+                                </div>
+                            ) : null}
                         </div>
                         {fieldErrors.tags ? (
                             <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.tags[0]}</p>
@@ -271,35 +377,79 @@ export function QuestionsPage() {
                     </div>
                 </form>
 
-                <div className="flex flex-wrap gap-3">
-                    {topicItems.map((item, index) => (
+                <div className="mt-5">
+                    <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                        Filter by topic
+                    </p>
+                    <div className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                         <button
-                            key={item}
                             type="button"
-                            onClick={() => setSelectedTopic(item)}
+                            onClick={() => setSelectedFilterTagId('')}
                             className={[
-                                'festival-card rounded-full px-4 py-2 text-sm font-black uppercase tracking-[0.14em]',
-                                selectedTopic === item || (index === 0 && selectedTopic === 'All topics')
-                                    ? 'bg-[#FFD327] text-black'
-                                    : 'bg-white/70 text-black dark:bg-white/10 dark:text-[rgb(var(--fg))]',
+                                'festival-card shrink-0 rounded-full px-5 py-3 text-xs font-black uppercase tracking-[0.18em] shadow-[4px_4px_0_rgba(0,0,0,0.85)] transition',
+                                selectedFilterTagId
+                                    ? 'border border-white/10 bg-white/10 text-[#d8cfbd] hover:bg-white/15 hover:text-white'
+                                    : 'border-2 border-black bg-[#25F2A0] text-black',
                             ].join(' ')}
                         >
-                            {item}
+                            All topics
                         </button>
-                    ))}
+
+                        {filterTags.map((tag) => {
+                            const isActive = String(tag.id) === String(selectedFilterTagId);
+
+                            return (
+                                <button
+                                    key={tag.id}
+                                    type="button"
+                                    onClick={() => setSelectedFilterTagId(String(tag.id))}
+                                    className={[
+                                        'festival-card shrink-0 rounded-full px-5 py-3 text-xs font-black uppercase tracking-[0.18em] shadow-[4px_4px_0_rgba(0,0,0,0.85)] transition',
+                                        isActive
+                                            ? 'border-2 border-black bg-[#FFD327] text-black'
+                                            : 'border border-white/10 bg-white/10 text-[#d8cfbd] hover:bg-white/15 hover:text-white',
+                                    ].join(' ')}
+                                >
+                                    <span className="flex items-center gap-2">
+                                        <span>{tag.name}</span>
+                                        {tag.questions_count ? (
+                                            <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-black/40 px-2 py-1 text-[10px] font-black leading-none text-[#FFF3DC]">
+                                                {tag.questions_count}
+                                            </span>
+                                        ) : null}
+                                    </span>
+                                </button>
+                            );
+                        })}
+
+                        {selectedFilterTag ? (
+                            <button
+                                type="button"
+                                onClick={() => setSelectedFilterTagId('')}
+                                className="festival-card shrink-0 rounded-full border border-[#ff8f8f]/40 bg-[#2a0b15] px-5 py-3 text-xs font-black uppercase tracking-[0.18em] text-[#ffb8b8] shadow-[4px_4px_0_rgba(0,0,0,0.85)] transition hover:bg-[#39101d]"
+                            >
+                                Clear
+                            </button>
+                        ) : null}
+                    </div>
+                    {selectedFilterTag ? (
+                        <p className="mt-2 text-xs font-semibold text-[#d8cfbd]">
+                            Showing questions tagged with <span className="font-black text-[#FFF3DC]">{selectedFilterTag.name}</span>.
+                        </p>
+                    ) : null}
                 </div>
             </SectionCard>
 
             <div className="grid gap-4">
-                {filteredQuestions.length ? (
-                    filteredQuestions.map((question) => (
+                {questions.length ? (
+                    questions.map((question) => (
                         <QuestionFeedCard key={question.id} question={question} />
                     ))
                 ) : (
                     <EmptyState
                         eyebrow="Questions"
-                        title="No questions for this topic"
-                        description="Try switching back to all topics or add more tagged questions to the database."
+                        title={selectedFilterTag ? `No ${selectedFilterTag.name} questions yet` : 'No questions for this topic'}
+                        description={selectedFilterTag ? 'Try another topic or ask a new tagged question.' : 'Try switching back to all topics or add more tagged questions to the database.'}
                     />
                 )}
             </div>

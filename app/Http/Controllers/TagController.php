@@ -13,7 +13,10 @@ class TagController extends Controller
     {
         $this->authorize('viewAny', Tag::class);
 
-        return Tag::withCount('questions')->latest()->paginate(10);
+        $perPage = (int) request()->query('per_page', 10);
+        $perPage = max(1, min($perPage, 100));
+
+        return Tag::withCount('questions')->latest()->paginate($perPage);
     }
 
     public function store(StoreTagRequest $request)
