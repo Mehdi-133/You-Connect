@@ -4,7 +4,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { EmptyState } from '../../../shared/ui/feedback/EmptyState';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
 import { LoadingState } from '../../../shared/ui/feedback/LoadingState';
-import { createBlog, getBlogs, likeBlog } from '../../../services/api/blogs.service';
+import { createBlog, deleteBlog, getBlogs, likeBlog } from '../../../services/api/blogs.service';
 import { BlogFeedCard } from '../components/BlogFeedCard';
 
 export function BlogsPage() {
@@ -24,6 +24,7 @@ export function BlogsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [likedBlogs, setLikedBlogs] = useState({});
     const [processingBlogId, setProcessingBlogId] = useState(null);
+    const [deletingBlogId, setDeletingBlogId] = useState(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -160,6 +161,36 @@ export function BlogsPage() {
             );
         } finally {
             setProcessingBlogId(null);
+        }
+    }
+
+    async function handleDeleteBlog(blog) {
+        if (!blog?.id) {
+            return;
+        }
+
+        setSuccessMessage('');
+        setFormError('');
+
+        const confirmed = window.confirm('Delete this blog? This action cannot be undone.');
+        if (!confirmed) {
+            return;
+        }
+
+        setDeletingBlogId(blog.id);
+
+        try {
+            await deleteBlog(blog.id);
+
+            setBlogs((currentBlogs) => currentBlogs.filter((item) => item.id !== blog.id));
+            setSuccessMessage('Blog deleted.');
+        } catch (requestError) {
+            setFormError(
+                requestError.response?.data?.message ||
+                'We could not delete this blog right now.'
+            );
+        } finally {
+            setDeletingBlogId(null);
         }
     }
 
@@ -305,6 +336,8 @@ export function BlogsPage() {
                             isLiking={processingBlogId === blog.id}
                             onLike={handleLikeBlog}
                             isOwner={Boolean(user && blog.you_coder?.id === user.id)}
+                            onDelete={handleDeleteBlog}
+                            isDeleting={deletingBlogId === blog.id}
                         />
                     ))}
                 </div>

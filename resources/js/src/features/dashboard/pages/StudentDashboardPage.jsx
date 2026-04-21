@@ -5,6 +5,7 @@ import { getRoleLabel, isAdmin, isBdeMembre, isFormateur } from '../../../shared
 import { useDashboardData } from '../hooks/useDashboardData';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
 import { LoadingState } from '../../../shared/ui/feedback/LoadingState';
+import { Link } from 'react-router-dom';
 
 const DASHBOARD_CONTENT = {
     student: {
@@ -14,31 +15,18 @@ const DASHBOARD_CONTENT = {
         missionLabel: 'Daily mission',
         missionTitle: 'Answer, publish, collect proof of growth.',
         missionCopy: 'This student view should help you move fast between learning goals, questions, blogs, and events.',
-        stats: [
-            { label: 'Reputation', value: '1,280', hint: 'current score', accent: 'rgb(var(--brand-mint))' },
-            { label: 'Unread alerts', value: '12', hint: 'notification center', accent: 'rgb(var(--brand-violet))' },
-            { label: 'Questions solved', value: '34', hint: 'community impact', accent: 'rgb(var(--brand-gold))' },
-        ],
         actions: [
-            { title: 'Ask a question', tone: 'bg-[#29CFFF]', copy: 'Open a clean ask flow with tags, hints, and community prompts.' },
-            { title: 'Write a blog', tone: 'bg-[#FFD327]', copy: 'Draft a story-driven blog card with moderation status built in.' },
-            { title: 'Review alerts', tone: 'bg-[#25F2A0]', copy: 'Surface accepted answers, votes, and approvals in one place.' },
-            { title: 'Join events', tone: 'bg-[#FF66D6]', copy: 'Push clubs, hackathons, and workshops with poster-like cards.' },
+            { title: 'Ask a question', href: '/app/questions', tone: 'bg-[#29CFFF]', copy: 'Get unstuck fast with tags, context, and community replies.' },
+            { title: 'Write a blog', href: '/app/blogs', tone: 'bg-[#FFD327]', copy: 'Share a lesson, a recap, or a tutorial you wish you had earlier.' },
+            { title: 'Check alerts', href: '/app/notifications', tone: 'bg-[#25F2A0]', copy: 'See approvals, replies, and signals you should react to.' },
+            { title: 'Explore events', href: '/app/events', tone: 'bg-[#FF66D6]', copy: 'Join workshops and club meetups that match your interests.' },
         ],
         feedTitle: 'What students should do first',
-        feedDescription: 'The next round will replace this with API data, but the screen already points learners to the most useful areas.',
-        feedItems: [
-            ['Frontend Builders', 'Recommended club', '#29CFFF'],
-            ['New answers on Laravel auth', 'Hot discussion', '#25F2A0'],
-            ['Write your first approved blog', 'Growth quest', '#FFD327'],
-            ['Hack Night starts at 18:00', 'Upcoming event', '#FF66D6'],
-        ],
+        feedDescription: 'A quick queue built from real activity: questions, blogs, and alerts worth opening next.',
         railTitle: 'Progress and activity',
         railDescription: 'This rail keeps the growth feeling visible: streaks, clubs, and earned proof.',
-        railLead: 'Current streak',
-        railValue: '6 days',
-        listTitle: 'Recommended clubs',
-        listItems: ['Frontend Builders', 'AI Tinker Lab', 'Hack Night Circle'],
+        railLead: 'Reputation',
+        listTitle: 'Badges & interests',
     },
     formateur: {
         eyebrow: 'Formateur dashboard',
@@ -47,31 +35,18 @@ const DASHBOARD_CONTENT = {
         missionLabel: 'Focus today',
         missionTitle: 'Review, approve, unblock, and mentor.',
         missionCopy: 'This view brings together the spaces where a formateur creates momentum for the whole learning community.',
-        stats: [
-            { label: 'Pending blogs', value: '9', hint: 'awaiting review', accent: 'rgb(var(--brand-gold))' },
-            { label: 'Open questions', value: '18', hint: 'students need guidance', accent: 'rgb(var(--brand-violet))' },
-            { label: 'Accepted answers', value: '57', hint: 'quality signals', accent: 'rgb(var(--brand-mint))' },
-        ],
         actions: [
-            { title: 'Review blogs', tone: 'bg-[#FFD327]', copy: 'Approve, reject, and improve the content pipeline.' },
-            { title: 'Answer questions', tone: 'bg-[#29CFFF]', copy: 'Jump into active threads where students are blocked.' },
-            { title: 'Manage tags', tone: 'bg-[#25F2A0]', copy: 'Keep the knowledge taxonomy clean and teachable.' },
-            { title: 'Track progress', tone: 'bg-[#FF66D6]', copy: 'Spot high performers and learners who need support.' },
+            { title: 'Review blogs', href: '/app/blogs', tone: 'bg-[#FFD327]', copy: 'Clear the moderation queue and improve content quality.' },
+            { title: 'Answer questions', href: '/app/questions', tone: 'bg-[#29CFFF]', copy: 'Jump into active threads where students are blocked.' },
+            { title: 'Check alerts', href: '/app/notifications', tone: 'bg-[#25F2A0]', copy: 'Catch approvals, mentions, and student follow-ups.' },
+            { title: 'Your profile', href: '/app/profile', tone: 'bg-[#FF66D6]', copy: 'Keep your mentor profile and badges visible and up to date.' },
         ],
         feedTitle: 'What formateurs should do first',
         feedDescription: 'Use the dashboard as a teaching control room: triage content, answer blockers, and keep signals healthy.',
-        feedItems: [
-            ['Three blogs waiting for approval', 'Moderation queue', '#FFD327'],
-            ['Auth debugging thread needs a reply', 'Priority question', '#29CFFF'],
-            ['Students asking for new web tags', 'Taxonomy update', '#25F2A0'],
-            ['Weekly mentoring event opens today', 'Community follow-up', '#FF66D6'],
-        ],
         railTitle: 'Teaching rhythm',
         railDescription: 'A quick side rail for review pace, mentoring focus, and active learning groups.',
-        railLead: 'Review pace',
-        railValue: '68% cleared',
-        listTitle: 'Groups to check in with',
-        listItems: ['Backend Cohort', 'React Builders', 'API Design Lab'],
+        railLead: 'Pending blogs',
+        listTitle: 'Badges & interests',
     },
     admin: {
         eyebrow: 'Admin dashboard',
@@ -80,31 +55,18 @@ const DASHBOARD_CONTENT = {
         missionLabel: 'Control center',
         missionTitle: 'Protect quality, enable people, and unblock operations.',
         missionCopy: 'This admin view should highlight the biggest management actions first and keep platform-wide work visible.',
-        stats: [
-            { label: 'Active users', value: '246', hint: 'current workspace', accent: 'rgb(var(--brand-mint))' },
-            { label: 'Flags to review', value: '7', hint: 'needs admin attention', accent: 'rgb(var(--brand-violet))' },
-            { label: 'Pending approvals', value: '14', hint: 'content pipeline', accent: 'rgb(var(--brand-gold))' },
-        ],
         actions: [
-            { title: 'Manage users', tone: 'bg-[#29CFFF]', copy: 'Inspect roles, statuses, and access across the platform.' },
-            { title: 'Assign badges', tone: 'bg-[#FFD327]', copy: 'Reward contribution and keep recognition visible.' },
-            { title: 'Review moderation', tone: 'bg-[#25F2A0]', copy: 'Keep blogs, comments, and community signals healthy.' },
-            { title: 'Tune taxonomy', tone: 'bg-[#FF66D6]', copy: 'Manage tags and structure for better discovery.' },
+            { title: 'Tags & topics', href: '/app/admin/tags', tone: 'bg-[#29CFFF]', copy: 'Keep discovery clean: merge duplicates and standardize naming.' },
+            { title: 'Badges & interests', href: '/app/admin/badges-interests', tone: 'bg-[#FFD327]', copy: 'Manage recognition and personalization signals across the platform.' },
+            { title: 'Review blogs', href: '/app/blogs', tone: 'bg-[#25F2A0]', copy: 'Approve, reject, and highlight community content.' },
+            { title: 'Notification center', href: '/app/notifications', tone: 'bg-[#FF66D6]', copy: 'Monitor what is new and what still needs attention.' },
         ],
         feedTitle: 'What admins should do first',
         feedDescription: 'This admin feed should stay focused on risk, approvals, and the parts of the product that need decisive action.',
-        feedItems: [
-            ['Two users need status review', 'User management', '#29CFFF'],
-            ['Badge assignment batch pending', 'Recognition queue', '#FFD327'],
-            ['Moderation report from blogs', 'Platform health', '#25F2A0'],
-            ['Tag cleanup suggested by formateurs', 'Taxonomy review', '#FF66D6'],
-        ],
         railTitle: 'Platform snapshot',
         railDescription: 'A compact right rail to keep system-wide momentum visible without leaving the dashboard.',
-        railLead: 'Governance pulse',
-        railValue: 'Stable',
-        listTitle: 'Watch areas',
-        listItems: ['User access', 'Content moderation', 'Tag quality'],
+        railLead: 'Users',
+        listTitle: 'Badges & interests',
     },
     bde_membre: {
         eyebrow: 'BDE dashboard',
@@ -113,31 +75,18 @@ const DASHBOARD_CONTENT = {
         missionLabel: 'Community pulse',
         missionTitle: 'Launch events, grow clubs, and keep students engaged.',
         missionCopy: 'Use this home view to push momentum through clubs, workshops, campaigns, and campus activities.',
-        stats: [
-            { label: 'Upcoming events', value: '5', hint: 'scheduled this week', accent: 'rgb(var(--brand-gold))' },
-            { label: 'Club requests', value: '4', hint: 'waiting review', accent: 'rgb(var(--brand-violet))' },
-            { label: 'New joins', value: '31', hint: 'community growth', accent: 'rgb(var(--brand-mint))' },
-        ],
         actions: [
-            { title: 'Promote an event', tone: 'bg-[#FF66D6]', copy: 'Highlight hack nights, workshops, and student experiences.' },
-            { title: 'Manage clubs', tone: 'bg-[#25F2A0]', copy: 'Keep clubs active, visible, and welcoming.' },
-            { title: 'Share highlights', tone: 'bg-[#FFD327]', copy: 'Push stories that make the campus community feel alive.' },
-            { title: 'Review notifications', tone: 'bg-[#29CFFF]', copy: 'Track event joins, club updates, and momentum signals.' },
+            { title: 'Publish events', href: '/app/events', tone: 'bg-[#FF66D6]', copy: 'Launch workshops and campus moments with strong visuals.' },
+            { title: 'Manage clubs', href: '/app/clubs', tone: 'bg-[#25F2A0]', copy: 'Keep clubs active, visible, and welcoming.' },
+            { title: 'Share highlights', href: '/app/blogs', tone: 'bg-[#FFD327]', copy: 'Publish posts that capture community energy.' },
+            { title: 'Check alerts', href: '/app/notifications', tone: 'bg-[#29CFFF]', copy: 'Track joins and signals across events and clubs.' },
         ],
         feedTitle: 'What BDE members should do first',
         feedDescription: 'This feed keeps community-building work at the center: events, clubs, and visible activity.',
-        feedItems: [
-            ['Hack Night poster needs publishing', 'Event push', '#FF66D6'],
-            ['Robotics club requested support', 'Club coordination', '#25F2A0'],
-            ['Workshop speaker confirmed', 'Community milestone', '#FFD327'],
-            ['Student requests new event calendar', 'Feedback signal', '#29CFFF'],
-        ],
         railTitle: 'Community momentum',
         railDescription: 'Track attendance energy, club health, and what needs extra promotion this week.',
-        railLead: 'Event energy',
-        railValue: 'High',
+        railLead: 'Upcoming events',
         listTitle: 'Clubs to spotlight',
-        listItems: ['Frontend Builders', 'Robotics Crew', 'Creative Media Hub'],
     },
 };
 
@@ -177,6 +126,11 @@ function getUpcomingEvents(events) {
     return events.filter((item) => item.status === 'upcoming').length;
 }
 
+function safeText(value, fallback = 'Untitled') {
+    const text = String(value || '').trim();
+    return text.length ? text : fallback;
+}
+
 function getRoleStats(user, data) {
     if (isAdmin(user)) {
         return [
@@ -209,56 +163,125 @@ function getRoleStats(user, data) {
     ];
 }
 
-function getRoleFeedItems(user, data) {
+function buildQueueItems(user, data) {
     if (isAdmin(user)) {
-        const adminItems = [
-            ...data.notifications.slice(0, 2).map((item) => [item.title, item.type || 'Notification', '#29CFFF']),
-            ...data.blogs.filter((item) => item.status === 'pending').slice(0, 2).map((item) => [item.title, 'Pending blog', '#FFD327']),
-        ];
-
-        return adminItems.length ? adminItems : DASHBOARD_CONTENT.admin.feedItems;
+        return [
+            ...data.blogs
+                .filter((item) => item.status === 'pending')
+                .slice(0, 3)
+                .map((item) => ({
+                    title: safeText(item.title),
+                    label: 'Pending blog',
+                    accent: '#FFD327',
+                    href: `/app/blogs/${item.id}`,
+                    helper: 'Review and approve',
+                })),
+            ...data.notifications.slice(0, 3).map((item) => ({
+                title: safeText(item.title),
+                label: item.type || 'Notification',
+                accent: '#29CFFF',
+                href: '/app/notifications',
+                helper: item.is_read ? 'Read' : 'New',
+            })),
+            ...data.questions.slice(0, 2).map((item) => ({
+                title: safeText(item.title),
+                label: 'Latest question',
+                accent: '#25F2A0',
+                href: `/app/questions/${item.id}`,
+                helper: item.status ? `Status: ${item.status}` : 'Open thread',
+            })),
+        ].slice(0, 6);
     }
 
     if (isFormateur(user)) {
-        const formateurItems = [
-            ...data.blogs.filter((item) => item.status === 'pending').slice(0, 2).map((item) => [item.title, 'Moderation queue', '#FFD327']),
-            ...data.questions.slice(0, 2).map((item) => [item.title, 'Question to review', '#29CFFF']),
-        ];
-
-        return formateurItems.length ? formateurItems : DASHBOARD_CONTENT.formateur.feedItems;
+        return [
+            ...data.blogs
+                .filter((item) => item.status === 'pending')
+                .slice(0, 3)
+                .map((item) => ({
+                    title: safeText(item.title),
+                    label: 'Moderation queue',
+                    accent: '#FFD327',
+                    href: `/app/blogs/${item.id}`,
+                    helper: 'Approve or reject',
+                })),
+            ...data.questions.slice(0, 4).map((item) => ({
+                title: safeText(item.title),
+                label: 'Question to answer',
+                accent: '#29CFFF',
+                href: `/app/questions/${item.id}`,
+                helper: item.status ? `Status: ${item.status}` : 'Needs guidance',
+            })),
+            ...data.notifications.slice(0, 2).map((item) => ({
+                title: safeText(item.title),
+                label: 'Alert',
+                accent: '#25F2A0',
+                href: '/app/notifications',
+                helper: item.is_read ? 'Read' : 'New',
+            })),
+        ].slice(0, 6);
     }
 
     if (isBdeMembre(user)) {
-        const bdeItems = [
-            ...data.events.slice(0, 2).map((item) => [item.title, 'Upcoming event', '#FF66D6']),
-            ...data.clubs.slice(0, 2).map((item) => [item.name, 'Active club', '#25F2A0']),
-        ];
-
-        return bdeItems.length ? bdeItems : DASHBOARD_CONTENT.bde_membre.feedItems;
+        return [
+            ...data.events.slice(0, 3).map((item) => ({
+                title: safeText(item.title),
+                label: item.status === 'upcoming' ? 'Upcoming event' : 'Event',
+                accent: '#FF66D6',
+                href: `/app/events/${item.id}`,
+                helper: item.status ? `Status: ${item.status}` : 'Open event',
+            })),
+            ...data.clubs.slice(0, 3).map((item) => ({
+                title: safeText(item.name),
+                label: 'Club spotlight',
+                accent: '#25F2A0',
+                href: `/app/clubs/${item.id}`,
+                helper: item.is_suspended ? 'Suspended' : 'Active',
+            })),
+            ...data.notifications.slice(0, 2).map((item) => ({
+                title: safeText(item.title),
+                label: 'Alert',
+                accent: '#29CFFF',
+                href: '/app/notifications',
+                helper: item.is_read ? 'Read' : 'New',
+            })),
+        ].slice(0, 6);
     }
 
-    const studentItems = [
-        ...data.questions.slice(0, 2).map((item) => [item.title, 'Latest question', '#29CFFF']),
-        ...data.blogs.slice(0, 2).map((item) => [item.title, item.status === 'approved' ? 'Approved blog' : 'Blog in progress', '#FFD327']),
-    ];
-
-    return studentItems.length ? studentItems : DASHBOARD_CONTENT.student.feedItems;
+    return [
+        ...data.questions.slice(0, 4).map((item) => ({
+            title: safeText(item.title),
+            label: 'Latest question',
+            accent: '#29CFFF',
+            href: `/app/questions/${item.id}`,
+            helper: item.status ? `Status: ${item.status}` : 'Open thread',
+        })),
+        ...data.blogs
+            .filter((item) => item.status === 'approved' || item.status === 'pending')
+            .slice(0, 2)
+            .map((item) => ({
+                title: safeText(item.title),
+                label: item.status === 'approved' ? 'Approved blog' : 'Blog pending',
+                accent: '#FFD327',
+                href: `/app/blogs/${item.id}`,
+                helper: item.status === 'approved' ? 'Read it now' : 'In review',
+            })),
+        ...data.notifications.slice(0, 2).map((item) => ({
+            title: safeText(item.title),
+            label: 'Alert',
+            accent: '#25F2A0',
+            href: '/app/notifications',
+            helper: item.is_read ? 'Read' : 'New',
+        })),
+    ].slice(0, 6);
 }
 
 function getRoleListItems(user, data) {
-    if (isAdmin(user)) {
-        const items = data.notifications.slice(0, 3).map((item) => item.title);
-        return items.length ? items : DASHBOARD_CONTENT.admin.listItems;
-    }
-
-    if (isFormateur(user)) {
-        const items = data.questions.slice(0, 3).map((item) => item.title);
-        return items.length ? items : DASHBOARD_CONTENT.formateur.listItems;
-    }
-
     if (isBdeMembre(user)) {
         const items = data.clubs.slice(0, 3).map((item) => item.name);
-        return items.length ? items : DASHBOARD_CONTENT.bde_membre.listItems;
+        if (items.length) {
+            return items;
+        }
     }
 
     const items = [
@@ -266,7 +289,7 @@ function getRoleListItems(user, data) {
         ...(data.profile?.badges?.slice(0, 3).map((item) => item.name) || []),
     ];
 
-    return items.length ? items.slice(0, 3) : DASHBOARD_CONTENT.student.listItems;
+    return items.slice(0, 3);
 }
 
 function getRoleRailValue(user, data) {
@@ -290,9 +313,10 @@ export function StudentDashboardPage() {
     const dashboard = getDashboardContent(user);
     const dashboardData = useDashboardData(user);
     const stats = getRoleStats(user, dashboardData);
-    const feedItems = getRoleFeedItems(user, dashboardData);
+    const queueItems = buildQueueItems(user, dashboardData);
     const listItems = getRoleListItems(user, dashboardData);
     const railValue = getRoleRailValue(user, dashboardData);
+    const unreadNotifications = dashboardData.notifications.filter((item) => !item.is_read).slice(0, 4);
 
     if (dashboardData.isLoading) {
         return (
@@ -341,11 +365,16 @@ export function StudentDashboardPage() {
                         </div>
                         <div className="mt-8 grid gap-4 md:grid-cols-2">
                             {dashboard.actions.map((item) => (
-                                <div key={item.title} className={`festival-card ${item.tone} rounded-[2rem] border-2 p-5 text-black`}>
+                                <Link
+                                    key={item.title}
+                                    to={item.href}
+                                    className={`festival-card ${item.tone} rounded-[2rem] border-2 p-5 text-black transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-black/60`}
+                                >
                                     <p className="text-xs font-black uppercase tracking-[0.16em]">Quick action</p>
                                     <p className="mt-3 font-display text-3xl font-extrabold leading-none">{item.title}</p>
                                     <p className="mt-3 text-sm font-medium leading-6">{item.copy}</p>
-                                </div>
+                                    <p className="mt-4 text-xs font-black uppercase tracking-[0.18em] text-black/70">Open</p>
+                                </Link>
                             ))}
                         </div>
                     </div>
@@ -360,22 +389,40 @@ export function StudentDashboardPage() {
 
             <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
                 <SectionCard
-                    eyebrow="Live feed"
+                    eyebrow="Queue"
                     title={dashboard.feedTitle}
                     description={dashboard.feedDescription}
                 >
-                    <div className="grid gap-4 md:grid-cols-2">
-                        {feedItems.map(([item, label, color]) => (
-                            <div key={item} className="festival-card rounded-[2rem] border border-[rgb(var(--line))] bg-[rgb(var(--bg-panel))] p-5">
-                                <div className="mb-4 h-3 w-20 rounded-full" style={{ backgroundColor: color }} />
-                                <p className="text-xs font-black uppercase tracking-[0.16em] text-[rgb(var(--fg-muted))]">{label}</p>
-                                <p className="mt-3 font-display text-2xl font-extrabold leading-none">{item}</p>
-                                <p className="mt-3 text-sm leading-7 text-[rgb(var(--fg-muted))]">
-                                    This card will become a reusable CTA pattern across the app.
-                                </p>
-                            </div>
-                        ))}
-                    </div>
+                    {queueItems.length ? (
+                        <div className="grid gap-4 md:grid-cols-2">
+                            {queueItems.map((item) => (
+                                <Link
+                                    key={`${item.href}-${item.title}`}
+                                    to={item.href}
+                                    className="festival-card group rounded-[2rem] border border-[rgb(var(--line))] bg-[rgb(var(--bg-panel))] p-5 transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand-mint))]/60"
+                                >
+                                    <div className="mb-4 h-3 w-20 rounded-full" style={{ backgroundColor: item.accent }} />
+                                    <p className="text-xs font-black uppercase tracking-[0.16em] text-[rgb(var(--fg-muted))]">
+                                        {item.label}
+                                    </p>
+                                    <p className="mt-3 font-display text-2xl font-extrabold leading-none group-hover:text-[#25F2A0]">
+                                        {item.title}
+                                    </p>
+                                    <div className="mt-4 flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.16em] text-[rgb(var(--fg-muted))]">
+                                        <span>{item.helper}</span>
+                                        <span className="rounded-full bg-white/10 px-3 py-1 text-[#FFF3DC]">Open</span>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="festival-card rounded-[2rem] border border-white/10 bg-[rgb(var(--bg-panel))] p-6">
+                            <p className="text-sm font-bold text-[rgb(var(--fg))]">Nothing urgent right now.</p>
+                            <p className="mt-2 text-sm leading-7 text-[rgb(var(--fg-muted))]">
+                                Use the quick actions above to stay active: ask, publish, or explore what is new.
+                            </p>
+                        </div>
+                    )}
                 </SectionCard>
 
                 <SectionCard
@@ -387,22 +434,64 @@ export function StudentDashboardPage() {
                         <div className="festival-card rounded-[2rem] bg-[#0B0126] p-5 text-[#FFF3DC]">
                             <p className="text-sm uppercase tracking-[0.16em] text-[#25F2A0]">{dashboard.railLead}</p>
                             <p className="mt-3 font-display text-4xl font-extrabold">{railValue}</p>
-                            <div className="mt-4 h-3 rounded-full bg-white/10">
-                                <div className="h-3 w-2/3 rounded-full bg-[linear-gradient(90deg,#A34DFF_0%,#29CFFF_40%,#25F2A0_100%)]" />
+                            <div className="mt-4 flex flex-wrap gap-2">
+                                <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#FFF3DC]">
+                                    {formatCount(getUnreadNotifications(dashboardData.notifications))} unread
+                                </span>
+                                <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#FFF3DC]">
+                                    {formatCount(getOpenQuestions(dashboardData.questions))} open questions
+                                </span>
                             </div>
                         </div>
                         <div className="festival-card rounded-[2rem] bg-[rgb(var(--bg-panel))] p-5">
+                            <div className="flex items-center justify-between gap-3">
+                                <p className="text-sm uppercase tracking-[0.16em] text-[rgb(var(--fg-muted))]">
+                                    New alerts
+                                </p>
+                                <Link
+                                    to="/app/notifications"
+                                    className="text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0] hover:underline"
+                                >
+                                    Open
+                                </Link>
+                            </div>
+                            {unreadNotifications.length ? (
+                                <ul className="mt-4 grid gap-3 text-sm">
+                                    {unreadNotifications.map((item) => (
+                                        <li key={item.id} className="rounded-[1.25rem] border border-white/10 bg-[#0B0126] px-4 py-3">
+                                            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#FFD327]">
+                                                {safeText(item.type || 'Notification')}
+                                            </p>
+                                            <p className="mt-2 font-bold text-[#FFF3DC]">
+                                                {safeText(item.title)}
+                                            </p>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="mt-4 text-sm leading-7 text-[rgb(var(--fg-muted))]">
+                                    You are all caught up. When something new happens, it will show here first.
+                                </p>
+                            )}
+                        </div>
+                        <div className="festival-card rounded-[2rem] bg-[rgb(var(--bg-panel))] p-5">
                             <p className="text-sm uppercase tracking-[0.16em] text-[rgb(var(--fg-muted))]">{dashboard.listTitle}</p>
-                            <ul className="mt-4 grid gap-3 text-sm">
-                                {listItems.map((item) => (
-                                    <li
-                                        key={item}
-                                        className="rounded-full bg-white/60 px-4 py-2 font-bold text-black dark:bg-white/10 dark:text-[rgb(var(--fg))]"
-                                    >
-                                        {item}
-                                    </li>
-                                ))}
-                            </ul>
+                            {listItems.length ? (
+                                <ul className="mt-4 flex flex-wrap gap-2 text-sm">
+                                    {listItems.map((item) => (
+                                        <li
+                                            key={item}
+                                            className="rounded-full bg-white/60 px-4 py-2 font-bold text-black dark:bg-white/10 dark:text-[rgb(var(--fg))]"
+                                        >
+                                            {item}
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="mt-4 text-sm leading-7 text-[rgb(var(--fg-muted))]">
+                                    Add interests or earn badges to personalize your experience.
+                                </p>
+                            )}
                         </div>
                     </div>
                 </SectionCard>

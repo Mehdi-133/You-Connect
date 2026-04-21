@@ -45,23 +45,23 @@ export function useDashboardData(user) {
                 error: '',
             }));
 
-            try {
-                const requests = [
-                    getUser(user.id),
-                    getUserScore(user.id),
-                    getNotifications(),
-                    getQuestions(),
-                    getBlogs(),
-                ];
+                try {
+                    const requests = [
+                        getUser(user.id),
+                        getUserScore(user.id),
+                        getNotifications({ per_page: 6 }),
+                        getQuestions({ per_page: 8 }),
+                        getBlogs({ per_page: 8 }),
+                    ];
 
-                if (isAdmin(user) || isFormateur(user)) {
-                    requests.push(getUsers());
-                }
+                    if (isAdmin(user) || isFormateur(user)) {
+                        requests.push(getUsers({ per_page: 1 }));
+                    }
 
-                if (isBdeMembre(user)) {
-                    requests.push(getClubs());
-                    requests.push(getEvents());
-                }
+                    if (isBdeMembre(user)) {
+                        requests.push(getClubs({ per_page: 6 }));
+                        requests.push(getEvents({ per_page: 6 }));
+                    }
 
                 const responses = await Promise.all(requests);
 

@@ -66,6 +66,7 @@ export function BlogDetailsPage() {
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState({
         title: '',
+        photo: '',
         content: '',
     });
     const [editError, setEditError] = useState('');
@@ -100,6 +101,7 @@ export function BlogDetailsPage() {
                 setBlog(response);
                 setEditForm({
                     title: response.title || '',
+                    photo: response.photo || '',
                     content: response.content || '',
                 });
             } catch (requestError) {
@@ -310,9 +312,11 @@ export function BlogDetailsPage() {
     const canEdit = user && blog.you_coder?.id === user.id;
     const canLike = user && blog.you_coder?.id !== user.id;
     const canModerate = canModerateBlogs(user);
+    const isOwnBlog = Boolean(user && blog.you_coder?.id === user.id);
+    const canModerateThisBlog = Boolean(canModerate && !isOwnBlog);
 
     return (
-        <div className="grid gap-6">
+        <div className="mx-auto grid w-full max-w-[1080px] gap-6 md:w-[86%]">
             <SectionCard
                 eyebrow="Blog details"
                 title=""
@@ -371,7 +375,7 @@ export function BlogDetailsPage() {
                             <button
                                 type="button"
                                 onClick={() => handleModerationAction('approve')}
-                                disabled={isModerating}
+                                disabled={isModerating || !canModerateThisBlog}
                                 className="festival-card rounded-full border-2 border-black bg-[#25F2A0] px-4 py-2 text-sm font-black uppercase tracking-[0.14em] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)] disabled:cursor-not-allowed disabled:opacity-70"
                             >
                                 Approve
@@ -379,7 +383,7 @@ export function BlogDetailsPage() {
                             <button
                                 type="button"
                                 onClick={() => handleModerationAction('reject')}
-                                disabled={isModerating}
+                                disabled={isModerating || !canModerateThisBlog}
                                 className="festival-card rounded-full border-2 border-black bg-[#FFD327] px-4 py-2 text-sm font-black uppercase tracking-[0.14em] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)] disabled:cursor-not-allowed disabled:opacity-70"
                             >
                                 Reject
@@ -387,11 +391,16 @@ export function BlogDetailsPage() {
                             <button
                                 type="button"
                                 onClick={() => handleModerationAction('highlight')}
-                                disabled={isModerating}
+                                disabled={isModerating || !canModerateThisBlog}
                                 className="festival-card rounded-full border-2 border-black bg-[#29CFFF] px-4 py-2 text-sm font-black uppercase tracking-[0.14em] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)] disabled:cursor-not-allowed disabled:opacity-70"
                             >
                                 {blog.is_highlighted ? 'Unhighlight' : 'Highlight'}
                             </button>
+                            {!canModerateThisBlog ? (
+                                <span className="rounded-full border border-black/10 bg-white/50 px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#7b5c3d]">
+                                    You cannot moderate your own blog
+                                </span>
+                            ) : null}
                         </>
                     ) : null}
                 </div>
@@ -408,33 +417,64 @@ export function BlogDetailsPage() {
                     <p className="mt-4 text-sm font-bold text-[#FFD327]">{interactionError}</p>
                 ) : null}
 
-                <div className="relative mt-8 overflow-hidden rounded-[2.1rem] border-2 border-black bg-[linear-gradient(145deg,#FFF3DC_0%,#ffe7a6_100%)] p-6 text-black shadow-[8px_8px_0_rgba(0,0,0,0.85)] md:p-7">
-                    <div className="absolute right-5 top-5 h-5 w-5 rounded-full bg-[#FF66D6]" />
-                    <div className="absolute right-12 top-10 h-3 w-3 rounded-full bg-[#29CFFF]" />
-                    <p className="text-xs font-black uppercase tracking-[0.22em] text-[#7b5c3d]">
-                        YouConnect editorial
-                    </p>
-
-                    {blog.photo ? (
-                        <div className="mt-5 overflow-hidden rounded-[1.8rem] border-2 border-black bg-white shadow-[6px_6px_0_rgba(0,0,0,0.22)]">
-                            <img src={blog.photo} alt="" className="h-64 w-full object-cover md:h-72" loading="lazy" />
+                <div className="relative mt-8 overflow-hidden rounded-[2.1rem] border-2 border-black bg-[linear-gradient(145deg,#FFF3DC_0%,#ffe7a6_100%)] text-black shadow-[8px_8px_0_rgba(0,0,0,0.85)]">
+                    <div className="relative md:flex">
+                        <div className="relative border-b border-black/15 bg-white/35 md:w-[300px] md:shrink-0 md:border-b-0 md:border-r md:border-black/15">
+                            <div className="relative h-52 sm:h-60 md:h-full md:min-h-[260px]">
+                                {blog.photo ? (
+                                    <img src={blog.photo} alt="" className="h-full w-full object-cover" loading="lazy" />
+                                ) : (
+                                    <div className="flex h-full w-full items-center justify-center text-black/55">
+                                        <div className="rounded-full border border-black/10 bg-white/70 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em]">
+                                            No image
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    ) : null}
-                    <h1 className="mt-5 font-display text-4xl font-extrabold leading-[1.02] md:text-5xl md:leading-[0.98]">
-                        {blog.title}
-                    </h1>
 
-                    <div className="mt-5 flex flex-wrap gap-3 text-sm font-bold text-[#4d4239]">
-                        <span className="rounded-full bg-black px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-[#FFF3DC]">
-                            {blog.like_count || 0} likes
-                        </span>
-                        <span className="rounded-full bg-white/60 px-4 py-2">
-                            {blog.comments?.length || 0} comments
-                        </span>
+                        <div className="relative flex min-w-0 flex-1 flex-col p-5 sm:p-6">
+                            <div className="absolute right-6 top-6 h-5 w-5 rounded-full bg-[#FF66D6]" />
+                            <div className="absolute right-14 top-12 h-3 w-3 rounded-full bg-[#29CFFF]" />
+
+                            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#7b5c3d]">
+                                YouConnect editorial
+                            </p>
+
+                            <h1 className="mt-4 font-display text-3xl font-extrabold leading-[1.05] md:text-4xl">
+                                {blog.title}
+                            </h1>
+
+                            <div className="mt-4 flex flex-wrap gap-3 text-sm font-bold text-[#4d4239]">
+                                <span className="rounded-full bg-black px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-[#FFF3DC]">
+                                    {blog.like_count || 0} likes
+                                </span>
+                                <span className="rounded-full bg-white/60 px-4 py-2">
+                                    {blog.comments?.length || 0} comments
+                                </span>
+                            </div>
+                        </div>
                     </div>
+                </div>
 
-                    {isEditing ? (
+                {isEditing ? (
                     <form onSubmit={handleUpdateBlog} className="mt-8 grid gap-4 rounded-[2rem] border border-black/15 bg-white/50 p-5">
+                        <div>
+                            <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#7b5c3d]">
+                                Blog photo URL
+                            </label>
+                            <input
+                                type="text"
+                                name="photo"
+                                value={editForm.photo}
+                                onChange={handleEditInputChange}
+                                placeholder="https://..."
+                                className="w-full rounded-[1.4rem] border border-black/10 bg-white px-4 py-3 text-sm text-black outline-none"
+                            />
+                            {editFieldErrors.photo ? (
+                                <p className="mt-2 text-xs font-bold text-[#FFD327]">{editFieldErrors.photo[0]}</p>
+                            ) : null}
+                        </div>
                         <div>
                             <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#7b5c3d]">
                                 Blog title
@@ -459,7 +499,7 @@ export function BlogDetailsPage() {
                                 name="content"
                                 value={editForm.content}
                                 onChange={handleEditInputChange}
-                                rows="8"
+                                rows="10"
                                 className="w-full rounded-[1.4rem] border border-black/10 bg-white px-4 py-3 text-sm text-black outline-none"
                             />
                             {editFieldErrors.content ? (
@@ -483,12 +523,11 @@ export function BlogDetailsPage() {
                     </form>
                 ) : (
                     <div className="mt-8 max-w-4xl">
-                        <p className="text-[1rem] leading-8 text-[#3d332c] whitespace-pre-line md:text-[1.05rem] md:leading-9">
+                        <p className="whitespace-pre-line text-[1rem] leading-8 text-[#edf1f8] md:text-[1.05rem] md:leading-9">
                             {blog.content}
                         </p>
                     </div>
                 )}
-                </div>
             </SectionCard>
 
             <SectionCard

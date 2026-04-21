@@ -6,6 +6,8 @@ import { logout } from '../../services/api/auth.service';
 import { useAuth } from '../../hooks/useAuth';
 import { getNotifications } from '../../services/api/notifications.service';
 import { getUser } from '../../services/api/users.service';
+import { createChat } from '../../services/api/chats.service';
+import { NewChatModal } from '../../features/chats/components/NewChatModal';
 import {
     getRoleLabel,
     isAdmin,
@@ -21,60 +23,6 @@ function getPrimaryNavigationItems() {
         { to: '/app/clubs', label: 'Clubs' },
         { to: '/app/events', label: 'Events' },
     ];
-}
-
-function getControlRoomItems(user, unreadNotificationsCount) {
-    const items = [
-        { to: '/app/notifications', label: 'Notifications', badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : null },
-        { to: '/app/profile', label: 'Profile' },
-    ];
-
-    if (isAdmin(user)) {
-        items.splice(1, 0, { to: '/app/admin/badges-interests', label: 'Admin Lab' });
-        items.splice(2, 0, { to: '/app/admin/tags', label: 'Tags' });
-    }
-
-    return items;
-}
-
-function getRoleTheme(user) {
-    if (isAdmin(user)) {
-        return {
-            eyebrow: 'Admin command center',
-            title: 'Operate the platform with confidence',
-            description: 'Manage tools, shape recognition systems, and keep the workspace moving with clear decisions.',
-            spotlight: 'Control room',
-            gradient: 'from-[#FFD327]/22 via-[#FF8B1F]/10 to-transparent',
-        };
-    }
-
-    if (isFormateur(user)) {
-        return {
-            eyebrow: 'Formateur workspace',
-            title: 'Guide students with sharper visibility',
-            description: 'Stay close to questions, review content, and catch the signals that need mentor attention.',
-            spotlight: 'Teaching focus',
-            gradient: 'from-[#25F2A0]/22 via-[#29CFFF]/10 to-transparent',
-        };
-    }
-
-    if (isBdeMembre(user)) {
-        return {
-            eyebrow: 'Community operations',
-            title: 'Keep the campus energy alive',
-            description: 'Surface community moments, maintain momentum, and make shared spaces feel active and welcoming.',
-            spotlight: 'Community pulse',
-            gradient: 'from-[#FF66D6]/20 via-[#FFD327]/10 to-transparent',
-        };
-    }
-
-    return {
-        eyebrow: 'Learning workspace',
-        title: 'Build momentum in one focused space',
-        description: 'Move between questions, blogs, notifications, and your profile without losing your rhythm.',
-        spotlight: 'Student focus',
-        gradient: 'from-[#29CFFF]/20 via-[#A34DFF]/10 to-transparent',
-    };
 }
 
 function getRoleAccent(user) {
@@ -123,6 +71,16 @@ function BellIcon() {
     );
 }
 
+function ChatIcon() {
+    return (
+        <svg viewBox="0 0 20 20" className="h-5 w-5 fill-none stroke-current stroke-[1.7]">
+            <path d="M4 4h12a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H9l-4.4 2.8A.8.8 0 0 1 3.5 16v-2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+            <path d="M6 8h8" />
+            <path d="M6 11h5" />
+        </svg>
+    );
+}
+
 function BookmarkIcon() {
     return (
         <svg viewBox="0 0 20 20" className="h-5 w-5 fill-none stroke-current stroke-[1.7]">
@@ -150,14 +108,51 @@ export function AppLayout() {
     const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
     const [profileBadgeCount, setProfileBadgeCount] = useState(0);
     const [profileReputation, setProfileReputation] = useState(0);
-    const [isCommunityMenuOpen, setIsCommunityMenuOpen] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-    const communityMenuRef = useRef(null);
+    const [isChatPickerOpen, setIsChatPickerOpen] = useState(false);
+    const [isCreatingChat, setIsCreatingChat] = useState(false);
+    const [chatCreateError, setChatCreateError] = useState('');
     const profileMenuRef = useRef(null);
     const navigationItems = getPrimaryNavigationItems();
-    const controlRoomItems = getControlRoomItems(user, unreadNotificationsCount);
-    const roleTheme = useMemo(() => getRoleTheme(user), [user]);
     const roleAccent = useMemo(() => getRoleAccent(user), [user]);
+
+    async function handleCreatePrivateChat(selectedUser) {
+        if (!selectedUser?.id || !user?.id) {
+            return;
+        }
+
+        setChatCreateError('');
+        setIsCreatingChat(true);
+
+        try {
+            const created = await createChat({
+                type: 'private',
+                member_ids: [selectedUser.id],
+            });
+
+            const chatId = created?.chat?.id || created?.id;
+            if (chatId) {
+                setIsChatPickerOpen(false);
+                navigate(`/app/chats/${chatId}`);
+            }
+        } catch (requestError) {
+            const status = requestError?.response?.status;
+            const existingChat = requestError?.response?.data?.chat;
+
+            if (status === 409 && existingChat?.id) {
+                setIsChatPickerOpen(false);
+                navigate(`/app/chats/${existingChat.id}`);
+                return;
+            }
+
+            setChatCreateError(
+                requestError?.response?.data?.message ||
+                'We could not start this chat right now.'
+            );
+        } finally {
+            setIsCreatingChat(false);
+        }
+    }
 
     useEffect(() => {
         let isMounted = true;
@@ -203,10 +198,6 @@ export function AppLayout() {
 
     useEffect(() => {
         function handleOutsideClick(event) {
-            if (communityMenuRef.current && !communityMenuRef.current.contains(event.target)) {
-                setIsCommunityMenuOpen(false);
-            }
-
             if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
                 setIsProfileMenuOpen(false);
             }
@@ -220,7 +211,6 @@ export function AppLayout() {
     }, []);
 
     useEffect(() => {
-        setIsCommunityMenuOpen(false);
         setIsProfileMenuOpen(false);
     }, [location.pathname]);
 
@@ -248,43 +238,6 @@ export function AppLayout() {
                         <Link to="/app" className="shrink-0">
                             <YouConnectLogo compact showTag={false} className="max-w-[210px]" />
                         </Link>
-
-                        <div ref={communityMenuRef} className="relative">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsCommunityMenuOpen((current) => !current);
-                                    setIsProfileMenuOpen(false);
-                                }}
-                                className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-black text-[#FFF3DC] transition hover:bg-white/10"
-                            >
-                                {roleTheme.spotlight}
-                            </button>
-
-                            {isCommunityMenuOpen ? (
-                                <div className="absolute left-0 z-20 mt-3 w-[280px] rounded-[1.6rem] border border-white/10 bg-[#0B0126] p-4 shadow-[8px_8px_0_rgba(0,0,0,0.85)]">
-                                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#25F2A0]">Workspace sections</p>
-                                    <div className="mt-3 grid gap-2">
-                                        {controlRoomItems.map((item) => (
-                                            <Link
-                                                key={item.to}
-                                                to={item.to}
-                                                className="rounded-[1rem] border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#d8cfbd] transition hover:bg-white/10 hover:text-white"
-                                            >
-                                                <span className="flex items-center justify-between gap-3">
-                                                    <span>{item.label}</span>
-                                                    {item.badge ? (
-                                                        <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[#1E2234] px-2 py-1 text-[10px] font-black leading-none text-[#FFF3DC]">
-                                                            {item.badge}
-                                                        </span>
-                                                    ) : null}
-                                                </span>
-                                            </Link>
-                                        ))}
-                                    </div>
-                                </div>
-                            ) : null}
-                        </div>
                     </div>
 
                     <nav className="hidden items-center justify-center gap-2 xl:flex">
@@ -334,6 +287,16 @@ export function AppLayout() {
                             ) : null}
                         </Link>
 
+                        <button
+                            type="button"
+                            onClick={() => setIsChatPickerOpen(true)}
+                            disabled={isCreatingChat}
+                            className="relative rounded-full border border-white/10 bg-white/5 p-3 text-[#d8cfbd] transition hover:bg-white/10 hover:text-white"
+                            aria-label="Start a new chat"
+                        >
+                            <ChatIcon />
+                        </button>
+
                         <button type="button" className="rounded-full border border-white/10 bg-white/5 p-3 text-[#d8cfbd] transition hover:bg-white/10 hover:text-white">
                             <BookmarkIcon />
                         </button>
@@ -343,7 +306,6 @@ export function AppLayout() {
                                 type="button"
                                 onClick={() => {
                                     setIsProfileMenuOpen((current) => !current);
-                                    setIsCommunityMenuOpen(false);
                                 }}
                                 className="group flex items-center gap-3 rounded-[1.6rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.03)_100%)] px-3 py-2.5 shadow-[4px_4px_0_rgba(0,0,0,0.7)] transition hover:border-white/15 hover:bg-[linear-gradient(135deg,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0.05)_100%)]"
                             >
@@ -385,6 +347,22 @@ export function AppLayout() {
                                         >
                                             View profile
                                         </Link>
+                                        {isAdmin(user) ? (
+                                            <>
+                                                <Link
+                                                    to="/app/admin/badges-interests"
+                                                    className="rounded-[1rem] border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#d8cfbd] transition hover:bg-white/10 hover:text-white"
+                                                >
+                                                    Admin Lab
+                                                </Link>
+                                                <Link
+                                                    to="/app/admin/tags"
+                                                    className="rounded-[1rem] border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#d8cfbd] transition hover:bg-white/10 hover:text-white"
+                                                >
+                                                    Tags
+                                                </Link>
+                                            </>
+                                        ) : null}
                                         <div className="rounded-[1rem] border border-white/10 bg-white/5 px-4 py-3">
                                             <div className="flex items-center justify-between gap-3">
                                                 <div>
@@ -450,6 +428,28 @@ export function AppLayout() {
                     </main>
                 </div>
             </div>
+
+            <NewChatModal
+                isOpen={isChatPickerOpen}
+                onClose={() => setIsChatPickerOpen(false)}
+                onSelectUser={handleCreatePrivateChat}
+                currentUserId={user?.id}
+            />
+            {chatCreateError ? (
+                <div className="fixed bottom-6 right-6 z-40 max-w-[420px] rounded-[1.4rem] border border-white/10 bg-[#0B0126] p-4 shadow-[8px_8px_0_rgba(0,0,0,0.85)]">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[#FFD327]">Chat</p>
+                    <p className="mt-2 text-sm font-bold text-[#FFF3DC]">{chatCreateError}</p>
+                    <div className="mt-3 flex justify-end gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setChatCreateError('')}
+                            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-[#FFF3DC] transition hover:bg-white/10"
+                        >
+                            Dismiss
+                        </button>
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 }

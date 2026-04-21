@@ -20,6 +20,11 @@ export async function updateBlog(blogId, payload) {
     return data;
 }
 
+export async function deleteBlog(blogId) {
+    const { data } = await apiClient.delete(`/blogs/${blogId}`);
+    return data;
+}
+
 export async function likeBlog(payload) {
     const { data } = await apiClient.post('/likes', payload);
     return data;

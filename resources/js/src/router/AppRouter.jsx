@@ -18,6 +18,8 @@ import { NotificationsPage } from '../features/notifications/pages/Notifications
 import { ProfilePage } from '../features/profile/pages/ProfilePage';
 import { BadgeInterestAdminPage } from '../features/admin/pages/BadgeInterestAdminPage';
 import { TagAdminPage } from '../features/admin/pages/TagAdminPage';
+import { ChatsPage } from '../features/chats/pages/ChatsPage';
+import { ChatThreadPage } from '../features/chats/pages/ChatThreadPage';
 import { ProtectedRoute } from './ProtectedRoute';
 import { isAdmin } from '../shared/utils/roles';
 
@@ -56,6 +58,8 @@ export function AppRouter() {
                 <Route path="/app/events/:eventId" element={<EventDetailsPage />} />
                 <Route path="/app/notifications" element={<NotificationsPage />} />
                 <Route path="/app/profile" element={<ProfilePage />} />
+                <Route path="/app/chats" element={<ChatsPage />} />
+                <Route path="/app/chats/:chatId" element={<ChatThreadPage />} />
                 <Route
                     path="/app/admin/badges-interests"
                     element={( 

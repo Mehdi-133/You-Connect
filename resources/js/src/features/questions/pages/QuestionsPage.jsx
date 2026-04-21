@@ -272,7 +272,18 @@ export function QuestionsPage() {
                                                     className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#FFF3DC]"
                                                 >
                                                     {tag.name}
-                                                    <span className="text-white/50">x</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(event) => {
+                                                            event.preventDefault();
+                                                            event.stopPropagation();
+                                                            toggleTag(tag.id);
+                                                        }}
+                                                        className="rounded-full bg-black/35 px-2 py-1 text-[10px] font-black text-white/70 transition hover:bg-black/55 hover:text-white"
+                                                        aria-label={`Remove ${tag.name}`}
+                                                    >
+                                                        x
+                                                    </button>
                                                 </span>
                                             ))}
                                         {form.tags.length > 6 ? (
