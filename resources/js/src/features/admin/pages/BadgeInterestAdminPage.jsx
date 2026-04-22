@@ -18,6 +18,7 @@ import {
 import { isAdmin } from '../../../shared/utils/roles';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
 import { LoadingState } from '../../../shared/ui/feedback/LoadingState';
+import { BadgeEmblem } from '../../../shared/components/BadgeEmblem';
 
 const INTEREST_TYPE_OPTIONS = [
     'web_development',
@@ -486,14 +487,39 @@ export function BadgeInterestAdminPage() {
                                     <input type="number" min="0" name="points_required" value={badgeForm.points_required} onChange={handleBadgeInputChange} className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none" />
                                 </div>
                                 <div>
-                                    <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#FFD327]">Icon</label>
-                                    <input type="text" name="icon" value={badgeForm.icon} onChange={handleBadgeInputChange} placeholder="badge-star" className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none" />
+                                    <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#FFD327]">Logo URL</label>
+                                    <input type="text" name="icon" value={badgeForm.icon} onChange={handleBadgeInputChange} placeholder="https://..." className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none" />
+                                    <p className="mt-2 text-xs font-semibold text-[#d8cfbd]">
+                                        Paste an image link to display a badge logo (we fall back to initials if it fails).
+                                    </p>
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#FFD327]">Description</label>
                                     <textarea name="description" value={badgeForm.description} onChange={handleBadgeInputChange} rows="3" className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none" />
                                 </div>
                             </div>
+
+                            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.6rem] border border-white/10 bg-[#09051a]/60 px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                    <BadgeEmblem
+                                        badge={{ name: badgeForm.name || 'Badge', icon: badgeForm.icon }}
+                                        gradientClassName="from-[#FFD327] via-[#FFB800] to-[#FF8B1F]"
+                                        sizeClassName="h-12 w-12"
+                                    />
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-black text-[#FFF3DC]">
+                                            {badgeForm.name || 'Badge preview'}
+                                        </p>
+                                        <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#d8cfbd]">
+                                            {Number(badgeForm.points_required) || 0} pts required
+                                        </p>
+                                    </div>
+                                </div>
+                                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#d8cfbd]">
+                                    Preview
+                                </span>
+                            </div>
+
                             <div className="flex flex-wrap items-center gap-3">
                                 <button type="submit" disabled={isSavingBadge} className="rounded-full bg-[#FFD327] px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-black disabled:cursor-not-allowed disabled:opacity-70">
                                     {isSavingBadge ? 'Saving...' : editingBadgeId ? 'Update badge' : 'Create badge'}
@@ -511,9 +537,16 @@ export function BadgeInterestAdminPage() {
                             {badges.map((badge) => (
                                 <div key={badge.id} className="rounded-[1.6rem] border border-white/10 bg-white/5 p-4 shadow-[4px_4px_0_rgba(0,0,0,0.7)]">
                                     <div className="flex flex-wrap items-start justify-between gap-3">
-                                        <div>
-                                            <p className="font-display text-2xl font-extrabold leading-none text-[#FFF3DC]">{badge.name}</p>
-                                            <p className="mt-2 text-sm leading-7 text-[#d8cfbd]">{badge.description || 'No description yet.'}</p>
+                                        <div className="flex min-w-0 items-start gap-3">
+                                            <BadgeEmblem
+                                                badge={badge}
+                                                gradientClassName="from-[#29CFFF] via-[#25F2A0] to-[#FFD327]"
+                                                sizeClassName="h-12 w-12"
+                                            />
+                                            <div className="min-w-0">
+                                                <p className="font-display text-2xl font-extrabold leading-none text-[#FFF3DC]">{badge.name}</p>
+                                                <p className="mt-2 text-sm leading-7 text-[#d8cfbd]">{badge.description || 'No description yet.'}</p>
+                                            </div>
                                         </div>
                                         <span className="rounded-full bg-[#FFD327] px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-black">
                                             {badge.points_required} pts

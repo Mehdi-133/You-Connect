@@ -3,6 +3,7 @@
 namespace Database\Factories;
 use App\Enums\UserRole;
 use App\Enums\YouCoderStatus;
+use App\Enums\Campus;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -28,6 +29,11 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'role' => UserRole::Student,
+            'campus' => fake()->randomElement([
+                Campus::Nador,
+                Campus::Safi,
+                Campus::Youssoufia,
+            ]),
             'class' => fake()->randomElement(['dev room', 'dar hamza']),
             'bio' => fake()->sentence(),
             'photo' => null,

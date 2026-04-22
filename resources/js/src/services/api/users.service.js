@@ -10,6 +10,16 @@ export async function getUser(userId) {
     return data;
 }
 
+export async function banUser(userId) {
+    const { data } = await apiClient.patch(`/users/${userId}/ban`);
+    return data;
+}
+
+export async function restoreUser(userId) {
+    const { data } = await apiClient.patch(`/users/${userId}/restore`);
+    return data;
+}
+
 export async function updateUser(userId, payload) {
     const { data } = await apiClient.put(`/users/${userId}`, payload);
     return data;

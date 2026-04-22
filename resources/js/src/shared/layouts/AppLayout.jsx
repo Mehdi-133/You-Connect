@@ -16,6 +16,7 @@ import {
     isBdeMembre,
     isFormateur,
 } from '../utils/roles';
+import { prefetchRouteChunk } from '../../router/routeChunks';
 
 function getPrimaryNavigationItems() {
     return [
@@ -374,6 +375,8 @@ export function AppLayout() {
                                 key={item.to}
                                 to={item.to}
                                 end={item.to === '/app'}
+                                onMouseEnter={() => prefetchRouteChunk(item.to)}
+                                onFocus={() => prefetchRouteChunk(item.to)}
                                 className={({ isActive }) =>
                                     [
                                         'group relative rounded-full px-4 py-2 text-sm font-black transition',
@@ -406,7 +409,12 @@ export function AppLayout() {
                             />
                         </label>
 
-                        <Link to="/app/notifications" className="relative rounded-full border border-white/10 bg-white/5 p-3 text-[#d8cfbd] transition hover:bg-white/10 hover:text-white">
+                        <Link
+                            to="/app/notifications"
+                            onMouseEnter={() => prefetchRouteChunk('/app/notifications')}
+                            onFocus={() => prefetchRouteChunk('/app/notifications')}
+                            className="relative rounded-full border border-white/10 bg-white/5 p-3 text-[#d8cfbd] transition hover:bg-white/10 hover:text-white"
+                        >
                             <BellIcon />
                             {unreadNotificationsCount ? (
                                 <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[#FFD327] px-1.5 py-1 text-[10px] font-black leading-none text-black">
@@ -534,6 +542,8 @@ export function AppLayout() {
                                     key={item.to}
                                     to={item.to}
                                     end={item.to === '/app'}
+                                    onMouseEnter={() => prefetchRouteChunk(item.to)}
+                                    onFocus={() => prefetchRouteChunk(item.to)}
                                     className={({ isActive }) =>
                                         [
                                             'whitespace-nowrap rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.14em] transition',

@@ -9,6 +9,10 @@ import { UserAvatar } from '../../../shared/components/UserAvatar';
 import { getChats, createChat } from '../../../services/api/chats.service';
 import { getChatMessages } from '../../../services/api/messages.service';
 import { NewChatModal } from '../components/NewChatModal';
+import { getCachedPageData, setCachedPageData } from '../../../shared/utils/pageCache';
+
+const CHATS_CACHE_KEY = 'page:chats';
+const CHATS_CACHE_TTL_MS = 30_000;
 
 function safeText(value, fallback = '') {
     const text = String(value || '').trim();
@@ -88,8 +92,17 @@ export function ChatsPage() {
     useEffect(() => {
         let isMounted = true;
 
+        const cached = getCachedPageData(CHATS_CACHE_KEY, CHATS_CACHE_TTL_MS);
+        if (cached?.chats) {
+            setChats(cached.chats);
+            setLatestMessageByChatId(cached.latestByChatId || {});
+            setIsLoading(false);
+        }
+
         async function loadChats() {
-            setIsLoading(true);
+            if (!cached?.chats) {
+                setIsLoading(true);
+            }
             setError('');
 
             try {
@@ -101,9 +114,14 @@ export function ChatsPage() {
 
                 const items = response?.data || [];
                 setChats(items);
+                setCachedPageData(CHATS_CACHE_KEY, {
+                    chats: items,
+                    latestByChatId: cached?.latestByChatId || {},
+                });
 
-                // Best-effort: fetch latest message for visible chats so unread indicators work immediately.
-                const latestPairs = await Promise.all(
+                // Best-effort: fetch latest message for visible chats so unread indicators work, but do it
+                // in the background so the chat list UI can render instantly.
+                Promise.all(
                     items.slice(0, 10).map(async (chat) => {
                         try {
                             const messagesResponse = await getChatMessages(chat.id, { page: 1 });
@@ -113,15 +131,19 @@ export function ChatsPage() {
                             return [String(chat.id), null];
                         }
                     })
-                );
+                ).then((latestPairs) => {
+                    if (!isMounted) {
+                        return;
+                    }
 
-                if (isMounted) {
                     const nextLatest = latestPairs.reduce((acc, [id, msg]) => {
                         acc[id] = msg;
                         return acc;
                     }, {});
+
                     setLatestMessageByChatId(nextLatest);
-                }
+                    setCachedPageData(CHATS_CACHE_KEY, { chats: items, latestByChatId: nextLatest });
+                });
             } catch (requestError) {
                 if (!isMounted) {
                     return;
@@ -133,7 +155,9 @@ export function ChatsPage() {
                 );
             } finally {
                 if (isMounted) {
-                    setIsLoading(false);
+                    if (!cached?.chats) {
+                        setIsLoading(false);
+                    }
                 }
             }
         }

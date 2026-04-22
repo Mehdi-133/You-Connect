@@ -8,6 +8,11 @@ import { Modal } from '../../../shared/ui/overlay/Modal';
 import { CreateActionButton } from '../../../shared/ui/buttons/CreateActionButton';
 import { createBlog, deleteBlog, getBlogs, likeBlog } from '../../../services/api/blogs.service';
 import { BlogFeedCard } from '../components/BlogFeedCard';
+import { getCachedPageData, setCachedPageData } from '../../../shared/utils/pageCache';
+import { getLikedBlogIds, setBlogLiked } from '../../../shared/utils/blogLikes';
+
+const BLOGS_CACHE_KEY = 'page:blogs';
+const BLOGS_CACHE_TTL_MS = 45_000;
 
 export function BlogsPage() {
     const { user } = useAuth();
@@ -30,10 +35,33 @@ export function BlogsPage() {
     const [deletingBlogId, setDeletingBlogId] = useState(null);
 
     useEffect(() => {
+        if (!user?.id) {
+            setLikedBlogs({});
+            return;
+        }
+
+        const ids = getLikedBlogIds(user.id);
+        const next = Array.from(ids).reduce((acc, id) => {
+            acc[id] = true;
+            return acc;
+        }, {});
+
+        setLikedBlogs(next);
+    }, [user?.id]);
+
+    useEffect(() => {
         let isMounted = true;
 
-        async function loadBlogs() {
-            setIsLoading(true);
+        const cached = getCachedPageData(BLOGS_CACHE_KEY, BLOGS_CACHE_TTL_MS);
+        if (cached?.blogs?.length) {
+            setBlogs(cached.blogs);
+            setIsLoading(false);
+        }
+
+        async function loadBlogs({ silent } = { silent: false }) {
+            if (!silent) {
+                setIsLoading(true);
+            }
             setError('');
 
             try {
@@ -43,7 +71,9 @@ export function BlogsPage() {
                     return;
                 }
 
-                setBlogs(response.data || []);
+                const nextBlogs = response.data || [];
+                setBlogs(nextBlogs);
+                setCachedPageData(BLOGS_CACHE_KEY, { blogs: nextBlogs });
             } catch (requestError) {
                 if (!isMounted) {
                     return;
@@ -55,12 +85,14 @@ export function BlogsPage() {
                 );
             } finally {
                 if (isMounted) {
-                    setIsLoading(false);
+                    if (!silent) {
+                        setIsLoading(false);
+                    }
                 }
             }
         }
 
-        loadBlogs();
+        loadBlogs({ silent: Boolean(cached?.blogs?.length) });
 
         return () => {
             isMounted = false;
@@ -140,6 +172,7 @@ export function BlogsPage() {
         try {
             const response = await likeBlog({ blog_id: blog.id });
             const isRemovingLike = response.message === 'Like removed';
+            const isNowLiked = !isRemovingLike;
 
             setBlogs((currentBlogs) =>
                 currentBlogs.map((item) =>
@@ -156,8 +189,9 @@ export function BlogsPage() {
 
             setLikedBlogs((currentLikedBlogs) => ({
                 ...currentLikedBlogs,
-                [blog.id]: !isRemovingLike,
+                [blog.id]: isNowLiked,
             }));
+            setBlogLiked(user?.id, blog.id, isNowLiked);
         } catch (requestError) {
             setFormError(
                 requestError.response?.data?.message ||
@@ -187,6 +221,12 @@ export function BlogsPage() {
             await deleteBlog(blog.id);
 
             setBlogs((currentBlogs) => currentBlogs.filter((item) => item.id !== blog.id));
+            setBlogLiked(user?.id, blog.id, false);
+            setLikedBlogs((current) => {
+                const next = { ...(current || {}) };
+                delete next[blog.id];
+                return next;
+            });
             setSuccessMessage('Blog deleted.');
         } catch (requestError) {
             setFormError(
@@ -275,6 +315,11 @@ export function BlogsPage() {
                                 name="title"
                                 value={form.title}
                                 onChange={handleInputChange}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                        event.preventDefault();
+                                    }
+                                }}
                                 placeholder="Share a lesson, tutorial, or community story"
                                 className="w-full rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
                             />
@@ -292,6 +337,11 @@ export function BlogsPage() {
                                 name="photo"
                                 value={form.photo}
                                 onChange={handleInputChange}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                        event.preventDefault();
+                                    }
+                                }}
                                 placeholder="https://..."
                                 className="w-full rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
                             />
@@ -415,6 +465,11 @@ export function BlogsPage() {
                             name="title"
                             value={form.title}
                             onChange={handleInputChange}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                }
+                            }}
                             placeholder="Share a lesson, tutorial, or community story"
                             className="w-full rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
                         />
@@ -432,6 +487,11 @@ export function BlogsPage() {
                             name="photo"
                             value={form.photo}
                             onChange={handleInputChange}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                }
+                            }}
                             placeholder="https://..."
                             className="w-full rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
                         />

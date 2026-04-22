@@ -26,11 +26,15 @@ export function Modal({
     const titleId = useId();
     const descriptionId = useId();
     const dialogRef = useRef(null);
-    const closeButtonRef = useRef(null);
     const previouslyFocusedRef = useRef(null);
+    const onCloseRef = useRef(onClose);
 
     const [isMounted, setIsMounted] = useState(Boolean(isOpen));
     const [isVisible, setIsVisible] = useState(Boolean(isOpen));
+
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    }, [onClose]);
 
     const maxWidthClass = useMemo(() => {
         if (size === 'lg') return 'max-w-[920px]';
@@ -82,13 +86,13 @@ export function Modal({
                 return tag === 'input' || tag === 'textarea' || tag === 'select';
             });
 
-            (firstField || focusable[0] || closeButtonRef.current)?.focus?.();
+            (firstField || focusable[0] || dialogRef.current)?.focus?.();
         }, 20);
 
         function handleKeyDown(event) {
             if (event.key === 'Escape') {
                 event.preventDefault();
-                onClose?.();
+                onCloseRef.current?.();
                 return;
             }
 
@@ -127,7 +131,7 @@ export function Modal({
             document.body.style.overflow = previousOverflow;
             previouslyFocusedRef.current?.focus?.();
         };
-    }, [isOpen, onClose]);
+    }, [isOpen]);
 
     if (!isMounted) {
         return null;
@@ -141,7 +145,7 @@ export function Modal({
                     'absolute inset-0 bg-black/75 backdrop-blur-md transition-opacity duration-200',
                     isVisible ? 'opacity-100' : 'opacity-0',
                 ].join(' ')}
-                onClick={onClose}
+                onClick={() => onCloseRef.current?.()}
                 aria-label={ariaLabel || 'Close modal'}
             />
 
@@ -182,11 +186,11 @@ export function Modal({
                         </div>
 
                         <button
-                            ref={closeButtonRef}
+                            ref={null}
                             type="button"
-                            onClick={onClose}
+                            onClick={() => onCloseRef.current?.()}
                             aria-label="Close modal"
-                            className="group inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[#FFF3DC] transition hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#25F2A0]/60"
+                            className="hidden"
                         >
                             <span className="text-lg font-black leading-none transition group-hover:scale-105">×</span>
                         </button>

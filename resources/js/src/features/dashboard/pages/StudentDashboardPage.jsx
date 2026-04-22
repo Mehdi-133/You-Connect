@@ -6,6 +6,7 @@ import { useDashboardData } from '../hooks/useDashboardData';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
 import { LoadingState } from '../../../shared/ui/feedback/LoadingState';
 import { Link } from 'react-router-dom';
+import { UserIntelligenceTable } from '../components/UserIntelligenceTable';
 
 const DASHBOARD_CONTENT = {
     student: {
@@ -308,6 +309,10 @@ function getRoleRailValue(user, data) {
     return `${formatCount(data.score)} score`;
 }
 
+function shouldShowUserIntelligence(user) {
+    return isAdmin(user) || isFormateur(user);
+}
+
 export function StudentDashboardPage() {
     const { user } = useAuth();
     const dashboard = getDashboardContent(user);
@@ -317,6 +322,7 @@ export function StudentDashboardPage() {
     const listItems = getRoleListItems(user, dashboardData);
     const railValue = getRoleRailValue(user, dashboardData);
     const unreadNotifications = dashboardData.notifications.filter((item) => !item.is_read).slice(0, 4);
+    const showUserIntelligence = shouldShowUserIntelligence(user);
 
     if (dashboardData.isLoading) {
         return (
@@ -496,6 +502,22 @@ export function StudentDashboardPage() {
                     </div>
                 </SectionCard>
             </div>
+
+            {showUserIntelligence ? (
+                <SectionCard
+                    eyebrow="User stats"
+                    title={isAdmin(user) ? 'Know the whole community' : 'Track learners across campuses'}
+                    description={isAdmin(user)
+                        ? 'Admins get a full platform view: roles, campuses, and reputation signals in one place.'
+                        : 'Formateurs see students and BDE members only, with campus segmentation for mentorship.'}
+                >
+                    <UserIntelligenceTable
+                        users={dashboardData.users || []}
+                        mode={isAdmin(user) ? 'admin' : 'formateur'}
+                        currentUserId={user?.id || null}
+                    />
+                </SectionCard>
+            ) : null}
         </div>
     );
 }

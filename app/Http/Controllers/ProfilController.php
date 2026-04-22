@@ -17,8 +17,23 @@ class ProfilController extends Controller
     public function index()
     {
         $this->authorize('viewAny', User::class);
-        return User::select('id', 'name', 'photo', 'bio', 'reputation', 'role', 'status', 'last_seen')
-            ->latest()->paginate(10);
+        $perPage = (int) request()->get('per_page', 10);
+        $perPage = $perPage > 0 ? min($perPage, 100) : 10;
+
+        return User::select(
+            'id',
+            'name',
+            'email',
+            'photo',
+            'bio',
+            'reputation',
+            'role',
+            'campus',
+            'class',
+            'status',
+            'last_seen',
+            'created_at'
+        )->latest()->paginate($perPage);
     }
 
     public function show(User $user)
@@ -36,9 +51,10 @@ class ProfilController extends Controller
             'bio'   => 'sometimes|string',
             'class' => 'sometimes|in:dev room,dar hamza',
             'photo' => 'sometimes|string',
+            'campus' => 'sometimes|in:nador,safi,youssoufia',
         ]);
 
-        $user->update($request->only(['name', 'bio', 'class', 'photo']));
+        $user->update($request->only(['name', 'bio', 'class', 'photo', 'campus']));
         return response()->json($user);
     }
 

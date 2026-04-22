@@ -11,6 +11,9 @@ function getErrorMessage(error) {
     return error?.response?.data?.message || 'We could not load the dashboard right now.';
 }
 
+const DASHBOARD_CACHE = new Map();
+const DASHBOARD_CACHE_TTL_MS = 45_000;
+
 export function useDashboardData(user) {
     const [state, setState] = useState({
         isLoading: true,
@@ -20,6 +23,7 @@ export function useDashboardData(user) {
         notifications: [],
         questions: [],
         blogs: [],
+        users: [],
         usersTotal: 0,
         clubs: [],
         clubsTotal: 0,
@@ -27,7 +31,10 @@ export function useDashboardData(user) {
     });
 
     useEffect(() => {
-        if (!user?.id) {
+        const userId = user?.id;
+        const role = user?.role || 'unknown';
+
+        if (!userId) {
             setState((currentState) => ({
                 ...currentState,
                 isLoading: false,
@@ -37,25 +44,44 @@ export function useDashboardData(user) {
         }
 
         let isMounted = true;
+        const cacheKey = `${userId}:${role}`;
+        const cached = DASHBOARD_CACHE.get(cacheKey);
+        const isCacheFresh = Boolean(cached && (Date.now() - cached.timestamp) < DASHBOARD_CACHE_TTL_MS);
 
-        async function loadDashboardData() {
-            setState((currentState) => ({
-                ...currentState,
-                isLoading: true,
+        if (isCacheFresh) {
+            setState({
+                ...cached.data,
+                isLoading: false,
                 error: '',
-            }));
+            });
+        }
+
+        async function loadDashboardData({ silent } = { silent: false }) {
+            if (!silent) {
+                setState((currentState) => ({
+                    ...currentState,
+                    isLoading: true,
+                    error: '',
+                }));
+            } else {
+                setState((currentState) => ({
+                    ...currentState,
+                    error: '',
+                }));
+            }
 
                 try {
                     const requests = [
-                        getUser(user.id),
-                        getUserScore(user.id),
+                        getUser(userId),
+                        getUserScore(userId),
                         getNotifications({ per_page: 6 }),
                         getQuestions({ per_page: 8 }),
                         getBlogs({ per_page: 8 }),
                     ];
 
                     if (isAdmin(user) || isFormateur(user)) {
-                        requests.push(getUsers({ per_page: 1 }));
+                        // Pull a bigger slice so dashboards can compute campus/role stats quickly.
+                        requests.push(getUsers({ per_page: 100 }));
                     }
 
                     if (isBdeMembre(user)) {
@@ -86,7 +112,7 @@ export function useDashboardData(user) {
                     return;
                 }
 
-                setState({
+                const nextState = {
                     isLoading: false,
                     error: '',
                     profile,
@@ -94,13 +120,21 @@ export function useDashboardData(user) {
                     notifications: notificationResponse?.data || [],
                     questions: questionResponse?.data || [],
                     blogs: blogResponse?.data || [],
+                    users: usersResponse?.data || [],
                     usersTotal: usersResponse?.total || 0,
                     clubs: clubsResponse?.data || [],
                     clubsTotal: clubsResponse?.total || 0,
                     events: eventsResponse?.data || [],
-                });
+                };
+
+                DASHBOARD_CACHE.set(cacheKey, { timestamp: Date.now(), data: nextState });
+                setState(nextState);
             } catch (error) {
                 if (!isMounted) {
+                    return;
+                }
+
+                if (silent && isCacheFresh) {
                     return;
                 }
 
@@ -112,12 +146,12 @@ export function useDashboardData(user) {
             }
         }
 
-        loadDashboardData();
+        loadDashboardData({ silent: isCacheFresh });
 
         return () => {
             isMounted = false;
         };
-    }, [user]);
+    }, [user?.id, user?.role]);
 
     return state;
 }

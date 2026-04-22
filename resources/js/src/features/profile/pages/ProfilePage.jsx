@@ -14,6 +14,10 @@ import { EmptyState } from '../../../shared/ui/feedback/EmptyState';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
 import { LoadingState } from '../../../shared/ui/feedback/LoadingState';
 import { UserAvatar } from '../../../shared/components/UserAvatar';
+import { getCachedPageData, setCachedPageData } from '../../../shared/utils/pageCache';
+import { BadgeEmblem } from '../../../shared/components/BadgeEmblem';
+
+const PROFILE_CACHE_TTL_MS = 45_000;
 
 function getStatusLabel(status) {
     if (!status) {
@@ -72,18 +76,6 @@ function getBadgeTone(index) {
     ];
 
     return tones[index % tones.length];
-}
-
-function getBadgeIconLabel(badge) {
-    if (badge?.icon) {
-        return badge.icon
-            .split(/[-_]/)
-            .map((part) => part[0]?.toUpperCase())
-            .join('')
-            .slice(0, 2);
-    }
-
-    return badge?.name?.slice(0, 1)?.toUpperCase() || 'B';
 }
 
 function formatAwardedAt(value) {
@@ -151,13 +143,30 @@ export function ProfilePage() {
 
     useEffect(() => {
         let isMounted = true;
+        const cacheKey = user?.id ? `page:profile:${user.id}` : '';
+        const cached = cacheKey ? getCachedPageData(cacheKey, PROFILE_CACHE_TTL_MS) : null;
+
+        if (cached?.profile) {
+            setProfile(cached.profile);
+            setScore(cached.score);
+            setAllInterests(cached.allInterests || []);
+            setForm(cached.form || {
+                name: cached.profile?.name || '',
+                bio: cached.profile?.bio || '',
+                class: cached.profile?.class || '',
+                photo: cached.profile?.photo || '',
+            });
+            setIsLoading(false);
+        }
 
         async function loadProfile() {
             if (!user?.id) {
                 return;
             }
 
-            setIsLoading(true);
+            if (!cached?.profile) {
+                setIsLoading(true);
+            }
             setError('');
 
             try {
@@ -173,12 +182,22 @@ export function ProfilePage() {
 
                 setProfile(profileResponse);
                 setScore(scoreResponse.reputation);
-                setAllInterests(interestsResponse?.data || []);
-                setForm({
+                const nextInterests = interestsResponse?.data || [];
+                const nextForm = {
                     name: profileResponse.name || '',
                     bio: profileResponse.bio || '',
                     class: profileResponse.class || '',
                     photo: profileResponse.photo || '',
+                };
+
+                setAllInterests(nextInterests);
+                setForm(nextForm);
+
+                setCachedPageData(cacheKey, {
+                    profile: profileResponse,
+                    score: scoreResponse.reputation,
+                    allInterests: nextInterests,
+                    form: nextForm,
                 });
             } catch (requestError) {
                 if (!isMounted) {
@@ -191,7 +210,9 @@ export function ProfilePage() {
                 );
             } finally {
                 if (isMounted) {
-                    setIsLoading(false);
+                    if (!cached?.profile) {
+                        setIsLoading(false);
+                    }
                 }
             }
         }
@@ -432,9 +453,11 @@ export function ProfilePage() {
                                             className="rounded-[1.3rem] border border-white/10 bg-[#09051a]/70 p-3 shadow-[4px_4px_0_rgba(0,0,0,0.65)]"
                                         >
                                             <div className="flex items-center gap-3">
-                                                <div className={`flex h-12 w-12 items-center justify-center rounded-[1rem] bg-gradient-to-br ${getBadgeTone(index)} text-sm font-black text-black shadow-[3px_3px_0_rgba(0,0,0,0.55)]`}>
-                                                    {getBadgeIconLabel(badge)}
-                                                </div>
+                                                <BadgeEmblem
+                                                    badge={badge}
+                                                    gradientClassName={getBadgeTone(index)}
+                                                    sizeClassName="h-12 w-12"
+                                                />
                                                 <div className="min-w-0 flex-1">
                                                     <p className="text-sm font-black text-[#FFF3DC]">{badge.name}</p>
                                                     <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#d8cfbd]">
@@ -732,9 +755,12 @@ export function ProfilePage() {
                                                 className="rounded-[1.4rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.03)_100%)] p-4"
                                             >
                                                 <div className="flex items-start gap-4">
-                                                    <div className={`flex h-14 w-14 items-center justify-center rounded-[1rem] bg-gradient-to-br ${getBadgeTone(index)} text-sm font-black text-black shadow-[4px_4px_0_rgba(0,0,0,0.55)]`}>
-                                                        {getBadgeIconLabel(badge)}
-                                                    </div>
+                                                    <BadgeEmblem
+                                                        badge={badge}
+                                                        gradientClassName={getBadgeTone(index)}
+                                                        sizeClassName="h-14 w-14"
+                                                        className="shadow-[4px_4px_0_rgba(0,0,0,0.55)]"
+                                                    />
                                                     <div className="min-w-0 flex-1">
                                                         <div className="flex flex-wrap items-center gap-2">
                                                             <p className="font-display text-2xl font-extrabold leading-none text-[#FFF3DC]">

@@ -16,6 +16,7 @@ import {
     rejectBlog,
     updateBlog,
 } from '../../../services/api/blogs.service';
+import { isBlogLiked, setBlogLiked } from '../../../shared/utils/blogLikes';
 
 function getStatusLabel(status, isHighlighted) {
     if (isHighlighted) {
@@ -127,6 +128,15 @@ export function BlogDetailsPage() {
         };
     }, [blogId]);
 
+    useEffect(() => {
+        if (!user?.id || !blog?.id) {
+            setHasLikedInSession(false);
+            return;
+        }
+
+        setHasLikedInSession(isBlogLiked(user.id, blog.id));
+    }, [user?.id, blog?.id]);
+
     function handleEditInputChange(event) {
         const { name, value } = event.target;
 
@@ -176,6 +186,7 @@ export function BlogDetailsPage() {
 
         try {
             const response = await likeBlog({ blog_id: blog.id });
+            const isNowLiked = response.message === 'Blog liked';
 
             setBlog((currentBlog) => ({
                 ...currentBlog,
@@ -183,7 +194,8 @@ export function BlogDetailsPage() {
                     ? Math.max(0, (currentBlog.like_count || 0) - 1)
                     : (currentBlog.like_count || 0) + 1,
             }));
-            setHasLikedInSession(response.message === 'Blog liked');
+            setHasLikedInSession(isNowLiked);
+            setBlogLiked(user?.id, blog.id, isNowLiked);
             setInteractionMessage(response.message);
         } catch (requestError) {
             setInteractionError(

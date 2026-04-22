@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\UserRole;
+use App\Enums\Campus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -26,6 +27,7 @@ class User extends Authenticatable
         'name',
         'email',
         'role',
+        'campus',
         'password',
         'class',
         'bio',
@@ -171,6 +173,7 @@ class User extends Authenticatable
             'reputation' => 'integer',
             'status' => YouCoderStatus::class,
             'role' => UserRole::class,
+            'campus' => Campus::class,
             'last_seen' => 'datetime',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',

@@ -10,6 +10,10 @@ import { Modal } from '../../../shared/ui/overlay/Modal';
 import { CreateActionButton } from '../../../shared/ui/buttons/CreateActionButton';
 import { createClub, getClubs, joinClub, leaveClub } from '../../../services/api/clubs.service';
 import { isFormateur } from '../../../shared/utils/roles';
+import { getCachedPageData, setCachedPageData } from '../../../shared/utils/pageCache';
+
+const CLUBS_CACHE_KEY = 'page:clubs';
+const CLUBS_CACHE_TTL_MS = 45_000;
 
 function getClubInitial(name) {
     return name?.slice(0, 1)?.toUpperCase() || 'C';
@@ -41,8 +45,16 @@ export function ClubsPage() {
     useEffect(() => {
         let isMounted = true;
 
+        const cached = getCachedPageData(CLUBS_CACHE_KEY, CLUBS_CACHE_TTL_MS);
+        if (cached?.clubs) {
+            setClubs(cached.clubs);
+            setIsLoading(false);
+        }
+
         async function loadClubs() {
-            setIsLoading(true);
+            if (!cached?.clubs) {
+                setIsLoading(true);
+            }
             setError('');
 
             try {
@@ -52,7 +64,9 @@ export function ClubsPage() {
                     return;
                 }
 
-                setClubs(response?.data || []);
+                const nextClubs = response?.data || [];
+                setClubs(nextClubs);
+                setCachedPageData(CLUBS_CACHE_KEY, { clubs: nextClubs });
             } catch (requestError) {
                 if (!isMounted) {
                     return;
@@ -64,7 +78,9 @@ export function ClubsPage() {
                 );
             } finally {
                 if (isMounted) {
-                    setIsLoading(false);
+                    if (!cached?.clubs) {
+                        setIsLoading(false);
+                    }
                 }
             }
         }
@@ -335,6 +351,11 @@ export function ClubsPage() {
                                 name="name"
                                 value={clubForm.name}
                                 onChange={handleClubInputChange}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                        event.preventDefault();
+                                    }
+                                }}
                                 placeholder="Frontend Builders"
                                 className="w-full rounded-[1.3rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
                             />
@@ -351,6 +372,11 @@ export function ClubsPage() {
                                 name="logo"
                                 value={clubForm.logo}
                                 onChange={handleClubInputChange}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                        event.preventDefault();
+                                    }
+                                }}
                                 placeholder="https://example.com/club-logo.png"
                                 className="w-full rounded-[1.3rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
                             />

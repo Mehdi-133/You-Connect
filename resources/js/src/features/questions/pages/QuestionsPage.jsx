@@ -8,6 +8,10 @@ import { CreateActionButton } from '../../../shared/ui/buttons/CreateActionButto
 import { createQuestion, getQuestions } from '../../../services/api/questions.service';
 import { getTags } from '../../../services/api/tags.service';
 import { QuestionFeedCard } from '../components/QuestionFeedCard';
+import { getCachedPageData, setCachedPageData } from '../../../shared/utils/pageCache';
+
+const QUESTIONS_CACHE_KEY = 'page:questions';
+const QUESTIONS_CACHE_TTL_MS = 45_000;
 
 export function QuestionsPage() {
     const [questions, setQuestions] = useState([]);
@@ -33,8 +37,17 @@ export function QuestionsPage() {
     useEffect(() => {
         let isMounted = true;
 
+        const cached = getCachedPageData(QUESTIONS_CACHE_KEY, QUESTIONS_CACHE_TTL_MS);
+        if (cached?.questions || cached?.tags) {
+            setQuestions(cached?.questions || []);
+            setAvailableTags(cached?.tags || []);
+            setIsLoading(false);
+        }
+
         async function loadQuestions() {
-            setIsLoading(true);
+            if (!cached) {
+                setIsLoading(true);
+            }
             setError('');
 
             try {
@@ -47,8 +60,11 @@ export function QuestionsPage() {
                     return;
                 }
 
-                setQuestions(questionsResponse.data || []);
-                setAvailableTags(tagsResponse.data || []);
+                const nextQuestions = questionsResponse.data || [];
+                const nextTags = tagsResponse.data || [];
+                setQuestions(nextQuestions);
+                setAvailableTags(nextTags);
+                setCachedPageData(QUESTIONS_CACHE_KEY, { questions: nextQuestions, tags: nextTags });
             } catch (requestError) {
                 if (!isMounted) {
                     return;
@@ -60,7 +76,9 @@ export function QuestionsPage() {
                 );
             } finally {
                 if (isMounted) {
-                    setIsLoading(false);
+                    if (!cached) {
+                        setIsLoading(false);
+                    }
                 }
             }
         }
@@ -296,6 +314,11 @@ export function QuestionsPage() {
                                 name="title"
                                 value={form.title}
                                 onChange={handleInputChange}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                        event.preventDefault();
+                                    }
+                                }}
                                 placeholder="How should I structure my React feature folders?"
                                 className="w-full rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
                             />
@@ -382,6 +405,11 @@ export function QuestionsPage() {
                                                 type="text"
                                                 value={tagQuery}
                                                 onChange={(event) => setTagQuery(event.target.value)}
+                                                onKeyDown={(event) => {
+                                                    if (event.key === 'Enter') {
+                                                        event.preventDefault();
+                                                    }
+                                                }}
                                                 placeholder="Search tags..."
                                                 className="w-full rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-white/40"
                                             />
@@ -627,6 +655,11 @@ export function QuestionsPage() {
                             name="title"
                             value={form.title}
                             onChange={handleInputChange}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                }
+                            }}
                             placeholder="How should I structure my React feature folders?"
                             className="w-full rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
                         />
@@ -713,6 +746,11 @@ export function QuestionsPage() {
                                             type="text"
                                             value={tagQuery}
                                             onChange={(event) => setTagQuery(event.target.value)}
+                                            onKeyDown={(event) => {
+                                                if (event.key === 'Enter') {
+                                                    event.preventDefault();
+                                                }
+                                            }}
                                             placeholder="Search tags..."
                                             className="w-full rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-white/40"
                                         />

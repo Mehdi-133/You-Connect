@@ -12,6 +12,10 @@ import {
     markAllNotificationsAsRead,
     markNotificationAsRead,
 } from '../../../services/api/notifications.service';
+import { getCachedPageData, setCachedPageData } from '../../../shared/utils/pageCache';
+
+const NOTIFICATIONS_CACHE_KEY = 'page:notifications';
+const NOTIFICATIONS_CACHE_TTL_MS = 30_000;
 
 const FILTER_ITEMS = [
     { key: 'all', label: 'All' },
@@ -155,8 +159,17 @@ export function NotificationsPage() {
     useEffect(() => {
         let isMounted = true;
 
+        const cached = getCachedPageData(NOTIFICATIONS_CACHE_KEY, NOTIFICATIONS_CACHE_TTL_MS);
+        if (cached?.notifications) {
+            setNotifications(cached.notifications);
+            setMeta(cached.meta || { total: cached.notifications.length, unread: cached.notifications.filter((item) => !item.is_read).length });
+            setIsLoading(false);
+        }
+
         async function loadNotificationCenter() {
-            setIsLoading(true);
+            if (!cached?.notifications) {
+                setIsLoading(true);
+            }
             setError('');
 
             try {
@@ -169,11 +182,14 @@ export function NotificationsPage() {
                 const items = response?.data || [];
 
                 setNotifications(items);
-                setMeta({
+                const nextMeta = {
                     total: response?.total || items.length,
                     unread: response?.unread_count ?? items.filter((item) => !item.is_read).length,
-                });
-                setUnreadNotificationsCount?.(response?.unread_count ?? items.filter((item) => !item.is_read).length);
+                };
+                setMeta(nextMeta);
+                const nextUnread = nextMeta.unread;
+                setUnreadNotificationsCount?.(nextUnread);
+                setCachedPageData(NOTIFICATIONS_CACHE_KEY, { notifications: items, meta: nextMeta });
             } catch (requestError) {
                 if (!isMounted) {
                     return;
@@ -182,7 +198,9 @@ export function NotificationsPage() {
                 setError(getErrorMessage(requestError, 'We could not load your notifications right now.'));
             } finally {
                 if (isMounted) {
-                    setIsLoading(false);
+                    if (!cached?.notifications) {
+                        setIsLoading(false);
+                    }
                 }
             }
         }

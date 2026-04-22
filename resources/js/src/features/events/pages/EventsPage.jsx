@@ -10,6 +10,10 @@ import { Modal } from '../../../shared/ui/overlay/Modal';
 import { CreateActionButton } from '../../../shared/ui/buttons/CreateActionButton';
 import { createEvent, getEvents, joinEvent, leaveEvent } from '../../../services/api/events.service';
 import { isBdeMembre } from '../../../shared/utils/roles';
+import { getCachedPageData, setCachedPageData } from '../../../shared/utils/pageCache';
+
+const EVENTS_CACHE_KEY = 'page:events';
+const EVENTS_CACHE_TTL_MS = 45_000;
 
 function formatEventDate(value) {
     if (!value) {
@@ -94,8 +98,16 @@ export function EventsPage() {
     useEffect(() => {
         let isMounted = true;
 
+        const cached = getCachedPageData(EVENTS_CACHE_KEY, EVENTS_CACHE_TTL_MS);
+        if (cached?.events) {
+            setEvents(cached.events);
+            setIsLoading(false);
+        }
+
         async function loadEvents() {
-            setIsLoading(true);
+            if (!cached?.events) {
+                setIsLoading(true);
+            }
             setError('');
 
             try {
@@ -105,7 +117,9 @@ export function EventsPage() {
                     return;
                 }
 
-                setEvents(response?.data || []);
+                const nextEvents = response?.data || [];
+                setEvents(nextEvents);
+                setCachedPageData(EVENTS_CACHE_KEY, { events: nextEvents });
             } catch (requestError) {
                 if (!isMounted) {
                     return;
@@ -117,7 +131,9 @@ export function EventsPage() {
                 );
             } finally {
                 if (isMounted) {
-                    setIsLoading(false);
+                    if (!cached?.events) {
+                        setIsLoading(false);
+                    }
                 }
             }
         }
@@ -393,6 +409,11 @@ export function EventsPage() {
                                 name="title"
                                 value={form.title}
                                 onChange={handleInputChange}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                        event.preventDefault();
+                                    }
+                                }}
                                 placeholder="Hack Night"
                                 className="w-full rounded-[1.3rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
                             />
@@ -406,6 +427,11 @@ export function EventsPage() {
                                 required
                                 value={form.photo}
                                 onChange={handleInputChange}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                        event.preventDefault();
+                                    }
+                                }}
                                 placeholder="https://..."
                                 className="w-full rounded-[1.3rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
                             />
@@ -418,6 +444,11 @@ export function EventsPage() {
                                 name="location"
                                 value={form.location}
                                 onChange={handleInputChange}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                        event.preventDefault();
+                                    }
+                                }}
                                 placeholder="YouCode campus hall"
                                 className="w-full rounded-[1.3rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
                             />
@@ -430,6 +461,11 @@ export function EventsPage() {
                                 name="starts_at"
                                 value={form.starts_at}
                                 onChange={handleInputChange}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                        event.preventDefault();
+                                    }
+                                }}
                                 className="w-full rounded-[1.3rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none focus:border-white/20"
                             />
                             {fieldErrors.starts_at ? <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.starts_at[0]}</p> : null}
@@ -441,6 +477,11 @@ export function EventsPage() {
                                 name="ends_at"
                                 value={form.ends_at}
                                 onChange={handleInputChange}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                        event.preventDefault();
+                                    }
+                                }}
                                 className="w-full rounded-[1.3rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none focus:border-white/20"
                             />
                             {fieldErrors.ends_at ? <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.ends_at[0]}</p> : null}

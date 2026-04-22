@@ -8,6 +8,7 @@ use App\Enums\InterestType;
 use App\Enums\NotificationType;
 use App\Enums\UserRole;
 use App\Enums\YouCoderStatus;
+use App\Enums\Campus;
 use App\Models\Badge;
 use App\Models\Blog;
 use App\Models\Club;
@@ -28,6 +29,7 @@ class DashboardDemoSeeder extends Seeder
             'name' => 'Admin',
             'email' => 'admin@youconnect.com',
             'role' => UserRole::Admin,
+            'campus' => Campus::Nador,
             'bio' => 'Administrator account',
             'reputation' => 2200,
         ]);
@@ -36,6 +38,7 @@ class DashboardDemoSeeder extends Seeder
             'name' => 'Formateur',
             'email' => 'formateur@youconnect.com',
             'role' => UserRole::Formateur,
+            'campus' => Campus::Safi,
             'bio' => 'Formateur account',
             'reputation' => 1680,
         ]);
@@ -44,6 +47,7 @@ class DashboardDemoSeeder extends Seeder
             'name' => 'BDE Membre',
             'email' => 'bde@youconnect.com',
             'role' => UserRole::BdeMembre,
+            'campus' => Campus::Youssoufia,
             'bio' => 'BDE Membre account',
             'reputation' => 960,
         ]);
@@ -52,6 +56,7 @@ class DashboardDemoSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
             'role' => UserRole::Student,
+            'campus' => Campus::Nador,
             'bio' => 'Student dashboard demo account',
             'reputation' => 1280,
         ]);
@@ -60,6 +65,7 @@ class DashboardDemoSeeder extends Seeder
             'name' => 'Amina Student',
             'email' => 'amina@example.com',
             'role' => UserRole::Student,
+            'campus' => Campus::Safi,
             'bio' => 'Frontend club member',
             'reputation' => 420,
         ]);
@@ -68,6 +74,7 @@ class DashboardDemoSeeder extends Seeder
             'name' => 'Yassine Student',
             'email' => 'yassine@example.com',
             'role' => UserRole::Student,
+            'campus' => Campus::Youssoufia,
             'bio' => 'Backend and API learner',
             'reputation' => 510,
         ]);
@@ -88,6 +95,7 @@ class DashboardDemoSeeder extends Seeder
                 'name' => $attributes['name'],
                 'password' => Hash::make('password'),
                 'role' => $attributes['role'],
+                'campus' => $attributes['campus'] ?? Campus::Nador,
                 'status' => YouCoderStatus::Active,
                 'class' => 'dev room',
                 'bio' => $attributes['bio'],
