@@ -80,6 +80,7 @@ export function EventDetailsPage() {
         [eventItem, user?.id]
     );
 
+
     useEffect(() => {
         let isMounted = true;
 

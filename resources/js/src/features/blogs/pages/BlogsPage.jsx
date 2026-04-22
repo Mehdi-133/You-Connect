@@ -4,6 +4,8 @@ import { useAuth } from '../../../hooks/useAuth';
 import { EmptyState } from '../../../shared/ui/feedback/EmptyState';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
 import { LoadingState } from '../../../shared/ui/feedback/LoadingState';
+import { Modal } from '../../../shared/ui/overlay/Modal';
+import { CreateActionButton } from '../../../shared/ui/buttons/CreateActionButton';
 import { createBlog, deleteBlog, getBlogs, likeBlog } from '../../../services/api/blogs.service';
 import { BlogFeedCard } from '../components/BlogFeedCard';
 
@@ -13,6 +15,7 @@ export function BlogsPage() {
     const [selectedFilter, setSelectedFilter] = useState('Featured');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [form, setForm] = useState({
         title: '',
         photo: '',
@@ -113,6 +116,7 @@ export function BlogsPage() {
             });
             setSelectedFilter('Featured');
             setSuccessMessage('Blog created successfully.');
+            setIsCreateOpen(false);
         } catch (requestError) {
             const nextFieldErrors = requestError.response?.data?.errors || {};
 
@@ -217,11 +221,112 @@ export function BlogsPage() {
 
     if (!blogs.length) {
         return (
-            <EmptyState
-                eyebrow="Blogs"
-                title="No blogs yet"
-                description="As soon as someone writes and submits a blog, the editorial feed will appear here."
-            />
+            <div className="grid gap-6">
+                <EmptyState
+                    eyebrow="Blogs"
+                    title="No blogs yet"
+                    description="Start the first story. Once people publish, the editorial feed will appear here."
+                    action={(
+                        <CreateActionButton
+                            label="Create blog"
+                            onClick={() => {
+                                setFormError('');
+                                setFieldErrors({});
+                                setSuccessMessage('');
+                                setIsCreateOpen(true);
+                            }}
+                        />
+                    )}
+                />
+
+                <Modal
+                    isOpen={isCreateOpen}
+                    onClose={() => setIsCreateOpen(false)}
+                    eyebrow="Create"
+                    title="Create a blog post"
+                    description="Share a lesson, tutorial, or community story. Keep it clear and useful."
+                    footer={(
+                        <div className="flex flex-wrap items-center justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setIsCreateOpen(false)}
+                                className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-[#FFF3DC] transition hover:bg-white/10"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                form="create-blog-form"
+                                disabled={isSubmitting}
+                                className="festival-card rounded-full border-2 border-black bg-[#25F2A0] px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black shadow-[6px_6px_0_rgba(0,0,0,0.85)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {isSubmitting ? 'Publishing…' : 'Create blog'}
+                            </button>
+                        </div>
+                    )}
+                >
+                    <form id="create-blog-form" onSubmit={handleCreateBlog} className="grid gap-4">
+                        <div>
+                            <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                Blog title
+                            </label>
+                            <input
+                                type="text"
+                                name="title"
+                                value={form.title}
+                                onChange={handleInputChange}
+                                placeholder="Share a lesson, tutorial, or community story"
+                                className="w-full rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
+                            />
+                            {fieldErrors.title ? (
+                                <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.title[0]}</p>
+                            ) : null}
+                        </div>
+
+                        <div>
+                            <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                Photo URL (optional)
+                            </label>
+                            <input
+                                type="text"
+                                name="photo"
+                                value={form.photo}
+                                onChange={handleInputChange}
+                                placeholder="https://..."
+                                className="w-full rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
+                            />
+                            {fieldErrors.photo ? (
+                                <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.photo[0]}</p>
+                            ) : null}
+                        </div>
+
+                        <div>
+                            <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                Blog content
+                            </label>
+                            <textarea
+                                name="content"
+                                value={form.content}
+                                onChange={handleInputChange}
+                                rows="8"
+                                placeholder="Write the full blog content here."
+                                className="w-full resize-none rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm leading-7 text-white outline-none placeholder:text-white/35 focus:border-white/20"
+                            />
+                            {fieldErrors.content ? (
+                                <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.content[0]}</p>
+                            ) : null}
+                        </div>
+
+                        {formError ? (
+                            <p className="text-sm font-bold text-[#FFD327]">{formError}</p>
+                        ) : null}
+
+                        {successMessage ? (
+                            <p className="text-sm font-bold text-[#25F2A0]">{successMessage}</p>
+                        ) : null}
+                    </form>
+                </Modal>
+            </div>
         );
     }
 
@@ -235,7 +340,72 @@ export function BlogsPage() {
             >
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top_left,rgba(255,102,214,0.16),transparent_26%),radial-gradient(circle_at_top_right,rgba(41,207,255,0.16),transparent_22%)]" />
 
-                <form onSubmit={handleCreateBlog} className="relative mb-6 grid gap-4 rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.07)_0%,rgba(255,255,255,0.03)_100%)] p-5 shadow-[6px_6px_0_rgba(0,0,0,0.85)]">
+                <div className="relative flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex flex-wrap gap-3">
+                        {filterItems.map((item, index) => (
+                            <button
+                                key={item}
+                                type="button"
+                                onClick={() => setSelectedFilter(item)}
+                                className={[
+                                    'festival-card rounded-full px-4 py-2 text-sm font-black uppercase tracking-[0.14em] shadow-[4px_4px_0_rgba(0,0,0,0.85)]',
+                                    selectedFilter === item || (index === 0 && selectedFilter === 'Featured')
+                                        ? 'border-2 border-black bg-[#25F2A0] text-black'
+                                        : 'border border-white/10 bg-white/70 text-black dark:bg-white/10 dark:text-[rgb(var(--fg))]',
+                                ].join(' ')}
+                            >
+                                {item}
+                            </button>
+                        ))}
+                    </div>
+
+                    <CreateActionButton
+                        label="Create blog"
+                        onClick={() => {
+                            setFormError('');
+                            setFieldErrors({});
+                            setSuccessMessage('');
+                            setIsCreateOpen(true);
+                        }}
+                    />
+                </div>
+
+                {formError ? (
+                    <p className="relative mt-4 text-sm font-bold text-[#FFD327]">{formError}</p>
+                ) : null}
+
+                {successMessage ? (
+                    <p className="relative mt-4 text-sm font-bold text-[#25F2A0]">{successMessage}</p>
+                ) : null}
+            </SectionCard>
+
+            <Modal
+                isOpen={isCreateOpen}
+                onClose={() => setIsCreateOpen(false)}
+                eyebrow="Create"
+                title="Create a blog post"
+                description="Share a lesson, tutorial, or community story. Keep it clear and useful."
+                footer={(
+                    <div className="flex flex-wrap items-center justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setIsCreateOpen(false)}
+                            className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-[#FFF3DC] transition hover:bg-white/10"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            form="create-blog-form"
+                            disabled={isSubmitting}
+                            className="festival-card rounded-full border-2 border-black bg-[#25F2A0] px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black shadow-[6px_6px_0_rgba(0,0,0,0.85)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {isSubmitting ? 'Publishing…' : 'Create blog'}
+                        </button>
+                    </div>
+                )}
+            >
+                <form id="create-blog-form" onSubmit={handleCreateBlog} className="grid gap-4">
                     <div>
                         <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
                             Blog title
@@ -246,7 +416,7 @@ export function BlogsPage() {
                             value={form.title}
                             onChange={handleInputChange}
                             placeholder="Share a lesson, tutorial, or community story"
-                            className="w-full rounded-[1.4rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
+                            className="w-full rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
                         />
                         {fieldErrors.title ? (
                             <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.title[0]}</p>
@@ -263,7 +433,7 @@ export function BlogsPage() {
                             value={form.photo}
                             onChange={handleInputChange}
                             placeholder="https://..."
-                            className="w-full rounded-[1.4rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
+                            className="w-full rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
                         />
                         {fieldErrors.photo ? (
                             <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.photo[0]}</p>
@@ -278,9 +448,9 @@ export function BlogsPage() {
                             name="content"
                             value={form.content}
                             onChange={handleInputChange}
-                            rows="6"
+                            rows="8"
                             placeholder="Write the full blog content here."
-                            className="w-full rounded-[1.4rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
+                            className="w-full resize-none rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm leading-7 text-white outline-none placeholder:text-white/35 focus:border-white/20"
                         />
                         {fieldErrors.content ? (
                             <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.content[0]}</p>
@@ -290,40 +460,8 @@ export function BlogsPage() {
                     {formError ? (
                         <p className="text-sm font-bold text-[#FFD327]">{formError}</p>
                     ) : null}
-
-                    {successMessage ? (
-                        <p className="text-sm font-bold text-[#25F2A0]">{successMessage}</p>
-                    ) : null}
-
-                    <div>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="festival-card rounded-full bg-[#25F2A0] px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-black disabled:cursor-not-allowed disabled:opacity-70"
-                        >
-                            {isSubmitting ? 'Publishing blog...' : 'Create blog'}
-                        </button>
-                    </div>
                 </form>
-
-                <div className="relative flex flex-wrap gap-3">
-                    {filterItems.map((item, index) => (
-                        <button
-                            key={item}
-                            type="button"
-                            onClick={() => setSelectedFilter(item)}
-                            className={[
-                                'festival-card rounded-full px-4 py-2 text-sm font-black uppercase tracking-[0.14em] shadow-[4px_4px_0_rgba(0,0,0,0.85)]',
-                                selectedFilter === item || (index === 0 && selectedFilter === 'Featured')
-                                    ? 'border-2 border-black bg-[#25F2A0] text-black'
-                                    : 'border border-white/10 bg-white/70 text-black dark:bg-white/10 dark:text-[rgb(var(--fg))]',
-                            ].join(' ')}
-                        >
-                            {item}
-                        </button>
-                    ))}
-                </div>
-            </SectionCard>
+            </Modal>
 
             {filteredBlogs.length ? (
                 <div className="grid gap-5">

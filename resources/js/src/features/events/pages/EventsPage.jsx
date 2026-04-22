@@ -6,6 +6,8 @@ import { useAuth } from '../../../hooks/useAuth';
 import { EmptyState } from '../../../shared/ui/feedback/EmptyState';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
 import { LoadingState } from '../../../shared/ui/feedback/LoadingState';
+import { Modal } from '../../../shared/ui/overlay/Modal';
+import { CreateActionButton } from '../../../shared/ui/buttons/CreateActionButton';
 import { createEvent, getEvents, joinEvent, leaveEvent } from '../../../services/api/events.service';
 import { isBdeMembre } from '../../../shared/utils/roles';
 
@@ -70,8 +72,10 @@ function isUserAttending(eventItem, userId) {
 export function EventsPage() {
     const { user } = useAuth();
     const [events, setEvents] = useState([]);
+    const [selectedStatus, setSelectedStatus] = useState('All');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [feedbackMessage, setFeedbackMessage] = useState('');
     const [processingEventId, setProcessingEventId] = useState(null);
     const [form, setForm] = useState({
@@ -125,7 +129,21 @@ export function EventsPage() {
         };
     }, []);
 
-    const featuredEvents = useMemo(() => events.slice(0, 3), [events]);
+    const statusFilters = ['All', 'Upcoming', 'Ongoing', 'Finished', 'Cancelled', 'Suspended'];
+
+    const filteredEvents = useMemo(() => {
+        if (selectedStatus === 'All') {
+            return events;
+        }
+
+        const normalized = selectedStatus.toLowerCase();
+
+        if (normalized === 'upcoming') {
+            return events.filter((eventItem) => !eventItem?.status || String(eventItem.status).toLowerCase() === 'upcoming');
+        }
+
+        return events.filter((eventItem) => String(eventItem?.status || '').toLowerCase() === normalized);
+    }, [events, selectedStatus]);
     const canCreateEvent = isBdeMembre(user);
 
     function handleInputChange(event) {
@@ -230,6 +248,7 @@ export function EventsPage() {
                 ends_at: '',
             });
             setSuccessMessage('Event created successfully.');
+            setIsCreateOpen(false);
         } catch (requestError) {
             const nextFieldErrors = requestError.response?.data?.errors || {};
 
@@ -286,89 +305,171 @@ export function EventsPage() {
             >
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-[radial-gradient(circle_at_top_left,rgba(255,102,214,0.18),transparent_28%),radial-gradient(circle_at_top_right,rgba(41,207,255,0.16),transparent_24%),radial-gradient(circle_at_55%_10%,rgba(255,211,39,0.12),transparent_28%)]" />
 
-                <div className="relative grid items-start gap-4 lg:grid-cols-3">
-                    {featuredEvents.map((eventItem, index) => (
-                        <div
-                            key={eventItem.id}
-                            className={[
-                                'rounded-[1.9rem] border border-white/10 p-5 shadow-[5px_5px_0_rgba(0,0,0,0.8)]',
-                                index === 0
-                                    ? 'bg-[linear-gradient(160deg,rgba(255,102,214,0.18)_0%,rgba(255,255,255,0.04)_100%)]'
-                                    : index === 1
-                                        ? 'bg-[linear-gradient(160deg,rgba(41,207,255,0.18)_0%,rgba(255,255,255,0.04)_100%)]'
-                                        : 'bg-[linear-gradient(160deg,rgba(255,211,39,0.18)_0%,rgba(255,255,255,0.04)_100%)]',
-                            ].join(' ')}
-                        >
-                            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#25F2A0]">Upcoming event</p>
-                            <p className="mt-4 font-display text-3xl font-extrabold leading-none text-[#FFF3DC]">{eventItem.title}</p>
-                            <p className="mt-4 text-sm leading-7 text-[#d8cfbd]">
-                                {eventItem.description || 'This event is waiting for its full story, timing, and shared energy.'}
-                            </p>
-                        </div>
-                    ))}
+                <div className="relative flex flex-wrap items-center justify-between gap-4">
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-white/60">
+                        Browse upcoming moments or create the next one.
+                    </p>
+                    {canCreateEvent ? (
+                        <CreateActionButton
+                            label="Create event"
+                            onClick={() => {
+                                setFormError('');
+                                setFieldErrors({});
+                                setSuccessMessage('');
+                                setFeedbackMessage('');
+                                setIsCreateOpen(true);
+                            }}
+                        />
+                    ) : null}
+                </div>
+
+                {formError ? (
+                    <p className="relative mt-4 text-sm font-bold text-[#FFD327]">{formError}</p>
+                ) : null}
+
+                {successMessage ? (
+                    <p className="relative mt-4 text-sm font-bold text-[#25F2A0]">{successMessage}</p>
+                ) : null}
+
+                <div className="relative mt-6">
+                    <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                        Filter by status
+                    </p>
+                    <div className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        {statusFilters.map((item) => {
+                            const isActive = item === selectedStatus;
+                            return (
+                                <button
+                                    key={item}
+                                    type="button"
+                                    onClick={() => setSelectedStatus(item)}
+                                    className={[
+                                        'festival-card shrink-0 rounded-full px-5 py-3 text-xs font-black uppercase tracking-[0.18em] shadow-[4px_4px_0_rgba(0,0,0,0.85)] transition',
+                                        isActive
+                                            ? 'border-2 border-black bg-[#25F2A0] text-black'
+                                            : 'border border-white/10 bg-white/10 text-[#d8cfbd] hover:bg-white/15 hover:text-white',
+                                    ].join(' ')}
+                                >
+                                    {item}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             </SectionCard>
 
-            {canCreateEvent ? (
-                <SectionCard
-                    eyebrow="Create event"
-                    title="Launch a visible moment for the community"
-                    description="As a BDE member, you can create events for members to discover and join."
-                >
-                    <form
-                        onSubmit={handleCreateEvent}
-                        className="grid gap-4 rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.07)_0%,rgba(255,255,255,0.03)_100%)] p-5 shadow-[5px_5px_0_rgba(0,0,0,0.8)]"
-                    >
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <div>
-                                <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">Event title</label>
-                                <input type="text" name="title" value={form.title} onChange={handleInputChange} placeholder="Hack Night" className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none" />
-                                {fieldErrors.title ? <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.title[0]}</p> : null}
-                            </div>
-                            <div>
-                                <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">Photo URL</label>
-                                <input type="url" name="photo" required value={form.photo} onChange={handleInputChange} placeholder="https://..." className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none" />
-                                {fieldErrors.photo ? <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.photo[0]}</p> : null}
-                            </div>
-                            <div>
-                                <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">Location</label>
-                                <input type="text" name="location" value={form.location} onChange={handleInputChange} placeholder="YouCode campus hall" className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none" />
-                                {fieldErrors.location ? <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.location[0]}</p> : null}
-                            </div>
-                            <div>
-                                <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">Starts at</label>
-                                <input type="datetime-local" name="starts_at" value={form.starts_at} onChange={handleInputChange} className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none" />
-                                {fieldErrors.starts_at ? <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.starts_at[0]}</p> : null}
-                            </div>
-                            <div>
-                                <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">Ends at</label>
-                                <input type="datetime-local" name="ends_at" value={form.ends_at} onChange={handleInputChange} className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none" />
-                                {fieldErrors.ends_at ? <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.ends_at[0]}</p> : null}
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">Description</label>
-                                <textarea name="description" value={form.description} onChange={handleInputChange} rows="4" placeholder="Explain what the event is about, who should join, and what people can expect." className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none" />
-                                {fieldErrors.description ? <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.description[0]}</p> : null}
-                            </div>
-                        </div>
-
-                        {formError ? <p className="text-sm font-bold text-[#FFD327]">{formError}</p> : null}
-                        {successMessage ? <p className="text-sm font-bold text-[#25F2A0]">{successMessage}</p> : null}
-
+            <Modal
+                isOpen={isCreateOpen}
+                onClose={() => setIsCreateOpen(false)}
+                eyebrow="Create"
+                title="Create an event"
+                description="Make the details clear so members can join with confidence."
+                footer={(
+                    <div className="flex flex-wrap items-center justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setIsCreateOpen(false)}
+                            className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-[#FFF3DC] transition hover:bg-white/10"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            form="create-event-form"
+                            disabled={isCreating}
+                            className="festival-card rounded-full border-2 border-black bg-[#25F2A0] px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black shadow-[6px_6px_0_rgba(0,0,0,0.85)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {isCreating ? 'Creating…' : 'Create event'}
+                        </button>
+                    </div>
+                )}
+            >
+                <form id="create-event-form" onSubmit={handleCreateEvent} className="grid gap-4">
+                    <div className="grid gap-4 md:grid-cols-2">
                         <div>
-                            <button type="submit" disabled={isCreating} className="festival-card rounded-full border-2 border-black bg-[#25F2A0] px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)] disabled:cursor-not-allowed disabled:opacity-70">
-                                {isCreating ? 'Creating event...' : 'Create event'}
-                            </button>
+                            <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">Event title</label>
+                            <input
+                                type="text"
+                                name="title"
+                                value={form.title}
+                                onChange={handleInputChange}
+                                placeholder="Hack Night"
+                                className="w-full rounded-[1.3rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
+                            />
+                            {fieldErrors.title ? <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.title[0]}</p> : null}
                         </div>
-                    </form>
-                </SectionCard>
-            ) : null}
+                        <div>
+                            <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">Photo URL</label>
+                            <input
+                                type="url"
+                                name="photo"
+                                required
+                                value={form.photo}
+                                onChange={handleInputChange}
+                                placeholder="https://..."
+                                className="w-full rounded-[1.3rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
+                            />
+                            {fieldErrors.photo ? <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.photo[0]}</p> : null}
+                        </div>
+                        <div>
+                            <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">Location</label>
+                            <input
+                                type="text"
+                                name="location"
+                                value={form.location}
+                                onChange={handleInputChange}
+                                placeholder="YouCode campus hall"
+                                className="w-full rounded-[1.3rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
+                            />
+                            {fieldErrors.location ? <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.location[0]}</p> : null}
+                        </div>
+                        <div>
+                            <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">Starts at</label>
+                            <input
+                                type="datetime-local"
+                                name="starts_at"
+                                value={form.starts_at}
+                                onChange={handleInputChange}
+                                className="w-full rounded-[1.3rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none focus:border-white/20"
+                            />
+                            {fieldErrors.starts_at ? <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.starts_at[0]}</p> : null}
+                        </div>
+                        <div>
+                            <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">Ends at</label>
+                            <input
+                                type="datetime-local"
+                                name="ends_at"
+                                value={form.ends_at}
+                                onChange={handleInputChange}
+                                className="w-full rounded-[1.3rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none focus:border-white/20"
+                            />
+                            {fieldErrors.ends_at ? <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.ends_at[0]}</p> : null}
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">Description</label>
+                            <textarea
+                                name="description"
+                                value={form.description}
+                                onChange={handleInputChange}
+                                rows="5"
+                                placeholder="Explain what the event is about, who should join, and what people can expect."
+                                className="w-full resize-none rounded-[1.3rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm leading-7 text-white outline-none placeholder:text-white/35 focus:border-white/20"
+                            />
+                            {fieldErrors.description ? <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.description[0]}</p> : null}
+                        </div>
+                    </div>
+
+                    {formError ? <p className="text-sm font-bold text-[#FFD327]">{formError}</p> : null}
+                </form>
+            </Modal>
 
             {feedbackMessage ? <p className="text-sm font-bold text-[#25F2A0]">{feedbackMessage}</p> : null}
 
             <div className="grid items-start gap-5 lg:grid-cols-2">
-                {events.map((eventItem) => {
+                {filteredEvents.map((eventItem) => {
                     const isAttending = isUserAttending(eventItem, user?.id);
+                    const isOwner = Boolean(user?.id && eventItem?.creator?.id && eventItem.creator.id === user.id) ||
+                        Boolean(user?.id && eventItem?.you_coder_id && eventItem.you_coder_id === user.id);
 
                     return (
                         <article key={eventItem.id} className="surface festival-card rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.07)_0%,rgba(255,255,255,0.03)_100%)] p-6 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
@@ -409,6 +510,23 @@ export function EventsPage() {
                                 <Link to={`/app/events/${eventItem.id}`} className="festival-card rounded-full border-2 border-black bg-[#FFF3DC] px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)]">
                                     Open event
                                 </Link>
+                                {isOwner ? (
+                                    <Link
+                                        to={`/app/events/${eventItem.id}/manage`}
+                                        className="festival-card rounded-full border-2 border-black bg-[#29CFFF] px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)]"
+                                    >
+                                        Manage
+                                    </Link>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        disabled
+                                        className="festival-card rounded-full border-2 border-black bg-white/10 px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-[#FFF3DC] shadow-[4px_4px_0_rgba(0,0,0,0.85)] opacity-60"
+                                        title="Only the event owner can manage this event"
+                                    >
+                                        Manage
+                                    </button>
+                                )}
                                 <button
                                     type="button"
                                     onClick={() => handleMembershipAction(eventItem)}

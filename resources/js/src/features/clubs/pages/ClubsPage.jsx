@@ -6,6 +6,8 @@ import { useAuth } from '../../../hooks/useAuth';
 import { EmptyState } from '../../../shared/ui/feedback/EmptyState';
 import { ErrorState } from '../../../shared/ui/feedback/ErrorState';
 import { LoadingState } from '../../../shared/ui/feedback/LoadingState';
+import { Modal } from '../../../shared/ui/overlay/Modal';
+import { CreateActionButton } from '../../../shared/ui/buttons/CreateActionButton';
 import { createClub, getClubs, joinClub, leaveClub } from '../../../services/api/clubs.service';
 import { isFormateur } from '../../../shared/utils/roles';
 
@@ -22,8 +24,10 @@ export function ClubsPage() {
     const [clubs, setClubs] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [feedbackMessage, setFeedbackMessage] = useState('');
     const [processingClubId, setProcessingClubId] = useState(null);
+    const [statusFilter, setStatusFilter] = useState('all'); // all | active | suspended
     const [clubForm, setClubForm] = useState({
         name: '',
         description: '',
@@ -72,10 +76,17 @@ export function ClubsPage() {
         };
     }, []);
 
-    const featuredClubs = useMemo(
-        () => clubs.slice(0, 3),
-        [clubs]
-    );
+    const filteredClubs = useMemo(() => {
+        if (statusFilter === 'active') {
+            return clubs.filter((club) => !club.is_suspended);
+        }
+
+        if (statusFilter === 'suspended') {
+            return clubs.filter((club) => club.is_suspended);
+        }
+
+        return clubs;
+    }, [clubs, statusFilter]);
     const canCreateClub = isFormateur(user);
 
     function handleClubInputChange(event) {
@@ -176,6 +187,7 @@ export function ClubsPage() {
                 logo: '',
             });
             setClubSuccessMessage('Club created successfully.');
+            setIsCreateOpen(false);
         } catch (requestError) {
             const nextFieldErrors = requestError.response?.data?.errors || {};
 
@@ -232,215 +244,254 @@ export function ClubsPage() {
             >
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-[radial-gradient(circle_at_top_left,rgba(37,242,160,0.18),transparent_28%),radial-gradient(circle_at_top_right,rgba(41,207,255,0.16),transparent_24%),radial-gradient(circle_at_55%_10%,rgba(255,211,39,0.12),transparent_28%)]" />
 
-                <div className="relative grid gap-4 lg:grid-cols-3">
-                    {featuredClubs.map((club, index) => (
-                        <div
-                            key={club.id}
-                            className={[
-                                'rounded-[1.9rem] border border-white/10 p-5 shadow-[5px_5px_0_rgba(0,0,0,0.8)]',
-                                index === 0
-                                    ? 'bg-[linear-gradient(160deg,rgba(37,242,160,0.18)_0%,rgba(255,255,255,0.04)_100%)]'
-                                    : index === 1
-                                        ? 'bg-[linear-gradient(160deg,rgba(41,207,255,0.18)_0%,rgba(255,255,255,0.04)_100%)]'
-                                        : 'bg-[linear-gradient(160deg,rgba(255,211,39,0.18)_0%,rgba(255,255,255,0.04)_100%)]',
-                            ].join(' ')}
-                        >
-                            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#25F2A0]">
-                                Featured club
-                            </p>
-                            <p className="mt-4 font-display text-3xl font-extrabold leading-none text-[#FFF3DC]">
-                                {club.name}
-                            </p>
-                            <p className="mt-4 text-sm leading-7 text-[#d8cfbd]">
-                                {club.description || 'This club is building a shared space for members to learn, contribute, and stay connected.'}
-                            </p>
-                        </div>
-                    ))}
+                <div className="relative flex flex-wrap items-center justify-between gap-4">
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-white/60">
+                        Explore clubs or launch a new space for learners.
+                    </p>
+                    {canCreateClub ? (
+                        <CreateActionButton
+                            label="Create club"
+                            tone="sky"
+                            onClick={() => {
+                                setClubFormError('');
+                                setClubFieldErrors({});
+                                setClubSuccessMessage('');
+                                setFeedbackMessage('');
+                                setIsCreateOpen(true);
+                            }}
+                        />
+                    ) : null}
                 </div>
+
+                {clubFormError ? (
+                    <p className="relative mt-4 text-sm font-bold text-[#FFD327]">{clubFormError}</p>
+                ) : null}
+
+                {clubSuccessMessage ? (
+                    <p className="relative mt-4 text-sm font-bold text-[#25F2A0]">{clubSuccessMessage}</p>
+                ) : null}
             </SectionCard>
 
-            {canCreateClub ? (
-                <SectionCard
-                    eyebrow="Create club"
-                    title="Launch a club space that people can join"
-                    description="As a formateur, you can create clubs and then manage them from their club page."
-                >
-                    <form
-                        onSubmit={handleCreateClub}
-                        className="grid gap-4 rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.07)_0%,rgba(255,255,255,0.03)_100%)] p-5 shadow-[5px_5px_0_rgba(0,0,0,0.8)]"
-                    >
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <div>
-                                <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
-                                    Club name
-                                </label>
-                                <input
-                                    type="text"
-                                    name="name"
-                                    value={clubForm.name}
-                                    onChange={handleClubInputChange}
-                                    placeholder="Frontend Builders"
-                                    className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
-                                />
-                                {clubFieldErrors.name ? (
-                                    <p className="mt-2 text-xs font-bold text-[#FFD327]">{clubFieldErrors.name[0]}</p>
-                                ) : null}
-                            </div>
-                            <div>
-                                <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
-                                    Logo URL
-                                </label>
-                                <input
-                                    type="text"
-                                    name="logo"
-                                    value={clubForm.logo}
-                                    onChange={handleClubInputChange}
-                                    placeholder="https://example.com/club-logo.png"
-                                    className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
-                                />
-                                {clubFieldErrors.logo ? (
-                                    <p className="mt-2 text-xs font-bold text-[#FFD327]">{clubFieldErrors.logo[0]}</p>
-                                ) : null}
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
-                                    Description
-                                </label>
-                                <textarea
-                                    name="description"
-                                    value={clubForm.description}
-                                    onChange={handleClubInputChange}
-                                    rows="4"
-                                    placeholder="Explain the mission of the club, what members will do, and why people should join."
-                                    className="w-full rounded-[1.3rem] border border-white/10 bg-[#0B0126] px-4 py-3 text-sm text-white outline-none"
-                                />
-                                {clubFieldErrors.description ? (
-                                    <p className="mt-2 text-xs font-bold text-[#FFD327]">{clubFieldErrors.description[0]}</p>
-                                ) : null}
-                            </div>
-                        </div>
+            <div className="flex flex-wrap items-center gap-3">
+                {[
+                    { key: 'all', label: 'All' },
+                    { key: 'active', label: 'Active' },
+                    { key: 'suspended', label: 'Suspended' },
+                ].map((option) => {
+                    const isActive = statusFilter === option.key;
 
-                        {clubFormError ? (
-                            <p className="text-sm font-bold text-[#FFD327]">{clubFormError}</p>
-                        ) : null}
+                    return (
+                        <button
+                            key={option.key}
+                            type="button"
+                            onClick={() => setStatusFilter(option.key)}
+                            className={[
+                                'rounded-full px-5 py-2 text-[11px] font-black uppercase tracking-[0.18em] transition',
+                                isActive
+                                    ? 'festival-card border-2 border-black bg-[#25F2A0] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)]'
+                                    : 'border border-white/10 bg-white/5 text-[#FFF3DC] hover:bg-white/10',
+                            ].join(' ')}
+                        >
+                            {option.label}
+                        </button>
+                    );
+                })}
+            </div>
 
-                        {clubSuccessMessage ? (
-                            <p className="text-sm font-bold text-[#25F2A0]">{clubSuccessMessage}</p>
-                        ) : null}
-
+            <Modal
+                isOpen={isCreateOpen}
+                onClose={() => setIsCreateOpen(false)}
+                eyebrow="Create"
+                title="Create a club"
+                description="Launch a club space members can join. Keep the mission clear."
+                footer={(
+                    <div className="flex flex-wrap items-center justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setIsCreateOpen(false)}
+                            className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-[#FFF3DC] transition hover:bg-white/10"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            form="create-club-form"
+                            disabled={isCreatingClub}
+                            className="festival-card rounded-full border-2 border-black bg-[#29CFFF] px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black shadow-[6px_6px_0_rgba(0,0,0,0.85)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {isCreatingClub ? 'Creating…' : 'Create club'}
+                        </button>
+                    </div>
+                )}
+            >
+                <form id="create-club-form" onSubmit={handleCreateClub} className="grid gap-4">
+                    <div className="grid gap-4 md:grid-cols-2">
                         <div>
-                            <button
-                                type="submit"
-                                disabled={isCreatingClub}
-                                className="festival-card rounded-full border-2 border-black bg-[#25F2A0] px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)] disabled:cursor-not-allowed disabled:opacity-70"
-                            >
-                                {isCreatingClub ? 'Creating club...' : 'Create club'}
-                            </button>
+                            <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                Club name
+                            </label>
+                            <input
+                                type="text"
+                                name="name"
+                                value={clubForm.name}
+                                onChange={handleClubInputChange}
+                                placeholder="Frontend Builders"
+                                className="w-full rounded-[1.3rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
+                            />
+                            {clubFieldErrors.name ? (
+                                <p className="mt-2 text-xs font-bold text-[#FFD327]">{clubFieldErrors.name[0]}</p>
+                            ) : null}
                         </div>
-                    </form>
-                </SectionCard>
-            ) : null}
+                        <div>
+                            <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                Logo URL
+                            </label>
+                            <input
+                                type="text"
+                                name="logo"
+                                value={clubForm.logo}
+                                onChange={handleClubInputChange}
+                                placeholder="https://example.com/club-logo.png"
+                                className="w-full rounded-[1.3rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
+                            />
+                            {clubFieldErrors.logo ? (
+                                <p className="mt-2 text-xs font-bold text-[#FFD327]">{clubFieldErrors.logo[0]}</p>
+                            ) : null}
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                Description
+                            </label>
+                            <textarea
+                                name="description"
+                                value={clubForm.description}
+                                onChange={handleClubInputChange}
+                                rows="5"
+                                placeholder="Explain the mission of the club, what members will do, and why people should join."
+                                className="w-full resize-none rounded-[1.3rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm leading-7 text-white outline-none placeholder:text-white/35 focus:border-white/20"
+                            />
+                            {clubFieldErrors.description ? (
+                                <p className="mt-2 text-xs font-bold text-[#FFD327]">{clubFieldErrors.description[0]}</p>
+                            ) : null}
+                        </div>
+                    </div>
+
+                    {clubFormError ? (
+                        <p className="text-sm font-bold text-[#FFD327]">{clubFormError}</p>
+                    ) : null}
+                </form>
+            </Modal>
 
             {feedbackMessage ? (
                 <p className="text-sm font-bold text-[#25F2A0]">{feedbackMessage}</p>
             ) : null}
 
             <div className="grid gap-5 lg:grid-cols-2">
-                {clubs.map((club, index) => {
-                    const isMember = isUserMember(club, user?.id);
-                    const isOwner = Boolean(user && club.creator_id === user.id);
+                {filteredClubs.length ? (
+                    filteredClubs.map((club, index) => {
+                        const isMember = isUserMember(club, user?.id);
+                        const isOwner = Boolean(user && club.creator_id === user.id);
 
-                    return (
-                        <article
-                            key={club.id}
-                            className="surface festival-card rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.07)_0%,rgba(255,255,255,0.03)_100%)] p-6 shadow-[5px_5px_0_rgba(0,0,0,0.8)]"
-                        >
-                            <div className="flex items-start gap-4">
-                                {club.logo ? (
-                                    <img
-                                        src={club.logo}
-                                        alt={club.name}
-                                        className="h-16 w-16 rounded-[1.2rem] border-2 border-black object-cover shadow-[4px_4px_0_rgba(0,0,0,0.75)]"
-                                    />
-                                ) : (
-                                    <div className={`flex h-16 w-16 items-center justify-center rounded-[1.2rem] border-2 border-black text-xl font-black text-black shadow-[4px_4px_0_rgba(0,0,0,0.75)] ${index % 2 === 0 ? 'bg-[linear-gradient(135deg,#29CFFF_0%,#25F2A0_58%,#FFD327_100%)]' : 'bg-[linear-gradient(135deg,#FFD327_0%,#FF9F1C_52%,#FF66D6_100%)]'}`}>
-                                        {getClubInitial(club.name)}
+                        return (
+                            <article
+                                key={club.id}
+                                className="surface festival-card rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.07)_0%,rgba(255,255,255,0.03)_100%)] p-6 shadow-[5px_5px_0_rgba(0,0,0,0.8)]"
+                            >
+                                <div className="flex items-start gap-4">
+                                    {club.logo ? (
+                                        <img
+                                            src={club.logo}
+                                            alt={club.name}
+                                            className="h-16 w-16 rounded-[1.2rem] border-2 border-black object-cover shadow-[4px_4px_0_rgba(0,0,0,0.75)]"
+                                        />
+                                    ) : (
+                                        <div className={`flex h-16 w-16 items-center justify-center rounded-[1.2rem] border-2 border-black text-xl font-black text-black shadow-[4px_4px_0_rgba(0,0,0,0.75)] ${index % 2 === 0 ? 'bg-[linear-gradient(135deg,#29CFFF_0%,#25F2A0_58%,#FFD327_100%)]' : 'bg-[linear-gradient(135deg,#FFD327_0%,#FF9F1C_52%,#FF66D6_100%)]'}`}>
+                                            {getClubInitial(club.name)}
+                                        </div>
+                                    )}
+
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <h2 className="font-display text-3xl font-extrabold leading-none text-[#FFF3DC]">
+                                                {club.name}
+                                            </h2>
+                                            {club.is_suspended ? (
+                                                <span className="rounded-full bg-[#FF66D6] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-black">
+                                                    Suspended
+                                                </span>
+                                            ) : (
+                                                <span className="rounded-full bg-[#25F2A0] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-black">
+                                                    Active
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <p className="mt-3 text-sm leading-7 text-[#d8cfbd]">
+                                            {club.description || 'This club is waiting for its story, mission, and member highlights.'}
+                                        </p>
                                     </div>
-                                )}
-
-                                <div className="min-w-0 flex-1">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <h2 className="font-display text-3xl font-extrabold leading-none text-[#FFF3DC]">
-                                            {club.name}
-                                        </h2>
-                                        {club.is_suspended ? (
-                                            <span className="rounded-full bg-[#FF66D6] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-black">
-                                                Suspended
-                                            </span>
-                                        ) : (
-                                            <span className="rounded-full bg-[#25F2A0] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-black">
-                                                Active
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    <p className="mt-3 text-sm leading-7 text-[#d8cfbd]">
-                                        {club.description || 'This club is waiting for its story, mission, and member highlights.'}
-                                    </p>
                                 </div>
-                            </div>
 
-                            <div className="mt-5 flex flex-wrap gap-3 text-sm font-bold text-[#d8cfbd]">
-                                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.04)_100%)] px-3 py-1.5 text-[12px] font-black uppercase tracking-[0.12em] text-[#FFF3DC]">
-                                    <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[#25F2A0] px-1.5 text-[10px] text-black">
-                                        {club.members_count || club.members?.length || 0}
+                                <div className="mt-5 flex flex-wrap gap-3 text-sm font-bold text-[#d8cfbd]">
+                                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.04)_100%)] px-3 py-1.5 text-[12px] font-black uppercase tracking-[0.12em] text-[#FFF3DC]">
+                                        <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[#25F2A0] px-1.5 text-[10px] text-black">
+                                            {club.members_count || club.members?.length || 0}
+                                        </span>
+                                        <span>Members</span>
                                     </span>
-                                    <span>Members</span>
-                                </span>
-                                <div className="flex items-center gap-2 rounded-full border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.04)_100%)] px-3 py-1.5">
-                                    <UserAvatar
-                                        name={club.creator?.name}
-                                        photo={club.creator?.photo}
-                                        size="sm"
-                                    />
-                                    <span>Created by {club.creator?.name || 'YouConnect member'}</span>
+                                    <div className="flex items-center gap-2 rounded-full border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.04)_100%)] px-3 py-1.5">
+                                        <UserAvatar
+                                            name={club.creator?.name}
+                                            photo={club.creator?.photo}
+                                            size="sm"
+                                        />
+                                        <span>Created by {club.creator?.name || 'YouConnect member'}</span>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="mt-6 flex flex-wrap gap-3">
-                                <Link
-                                    to={`/app/clubs/${club.id}`}
-                                    className="festival-card rounded-full border-2 border-black bg-[#FFF3DC] px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)]"
-                                >
-                                    Open club
-                                </Link>
-                                {isOwner ? (
+                                <div className="mt-6 flex flex-wrap gap-3">
                                     <Link
                                         to={`/app/clubs/${club.id}`}
-                                        className="festival-card rounded-full border-2 border-black bg-[#FFD327] px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)]"
+                                        className="festival-card rounded-full border-2 border-black bg-[#FFF3DC] px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)]"
                                     >
-                                        Manage club
+                                        Open club
                                     </Link>
-                                ) : null}
-                                <button
-                                    type="button"
-                                    onClick={() => handleMembershipAction(club)}
-                                    disabled={processingClubId === club.id || club.is_suspended}
-                                    className={[
-                                        'festival-card rounded-full border-2 border-black px-4 py-3 text-sm font-black uppercase tracking-[0.14em] shadow-[4px_4px_0_rgba(0,0,0,0.85)] disabled:cursor-not-allowed disabled:opacity-60',
-                                        isMember ? 'bg-[#FF66D6] text-black' : 'bg-[#25F2A0] text-black',
-                                    ].join(' ')}
-                                >
-                                    {processingClubId === club.id
-                                        ? 'Updating...'
-                                        : isMember
-                                            ? 'Leave club'
-                                            : 'Join club'}
-                                </button>
-                            </div>
-                        </article>
-                    );
-                })}
+                                    {isOwner ? (
+                                        <Link
+                                            to={`/app/clubs/${club.id}`}
+                                            className="festival-card rounded-full border-2 border-black bg-[#FFD327] px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)]"
+                                        >
+                                            Manage club
+                                        </Link>
+                                    ) : null}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleMembershipAction(club)}
+                                        disabled={processingClubId === club.id || club.is_suspended}
+                                        className={[
+                                            'festival-card rounded-full border-2 border-black px-4 py-3 text-sm font-black uppercase tracking-[0.14em] shadow-[4px_4px_0_rgba(0,0,0,0.85)] disabled:cursor-not-allowed disabled:opacity-60',
+                                            isMember ? 'bg-[#FF66D6] text-black' : 'bg-[#25F2A0] text-black',
+                                        ].join(' ')}
+                                    >
+                                        {processingClubId === club.id
+                                            ? 'Updating...'
+                                            : isMember
+                                                ? 'Leave club'
+                                                : 'Join club'}
+                                    </button>
+                                </div>
+                            </article>
+                        );
+                    })
+                ) : (
+                    <div className="lg:col-span-2">
+                        <EmptyState
+                            eyebrow="Clubs"
+                            title="No clubs match this filter"
+                            description="Try another status to see active or suspended clubs."
+                        />
+                    </div>
+                )}
             </div>
         </div>
     );

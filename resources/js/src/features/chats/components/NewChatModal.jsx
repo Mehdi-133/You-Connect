@@ -1,9 +1,31 @@
 import { useEffect, useMemo, useState } from 'react';
 import { UserAvatar } from '../../../shared/components/UserAvatar';
 import { getUsers } from '../../../services/api/users.service';
+import { getChats } from '../../../services/api/chats.service';
+import { getChatMessages } from '../../../services/api/messages.service';
 
 function normalize(value) {
     return String(value || '').trim().toLowerCase();
+}
+
+function getPeerId(chat, currentUserId) {
+    const members = Array.isArray(chat?.members) ? chat.members : [];
+    const peer = members.find((member) => member?.id && member.id !== currentUserId);
+    return peer?.id || null;
+}
+
+function getLastSeenKey(chatId) {
+    return `youconnect_chat_last_seen_${chatId}`;
+}
+
+function getLastSeenMessageId(chatId) {
+    const raw = localStorage.getItem(getLastSeenKey(chatId));
+    if (!raw) {
+        return null;
+    }
+
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : null;
 }
 
 export function NewChatModal({ isOpen, onClose, onSelectUser, currentUserId }) {
@@ -11,6 +33,8 @@ export function NewChatModal({ isOpen, onClose, onSelectUser, currentUserId }) {
     const [query, setQuery] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [unreadByUserId, setUnreadByUserId] = useState({});
+    const [hasChatByUserId, setHasChatByUserId] = useState({});
 
     useEffect(() => {
         if (!isOpen) {
@@ -22,16 +46,62 @@ export function NewChatModal({ isOpen, onClose, onSelectUser, currentUserId }) {
         async function loadUsers() {
             setIsLoading(true);
             setError('');
+            setUnreadByUserId({});
+            setHasChatByUserId({});
 
             try {
-                const response = await getUsers({ per_page: 50 });
+                const [usersResponse, chatsResponse] = await Promise.all([
+                    getUsers({ per_page: 50 }),
+                    getChats({ page: 1 }),
+                ]);
 
                 if (!isMounted) {
                     return;
                 }
 
-                const items = response?.data || [];
+                const items = usersResponse?.data || [];
                 setUsers(items.filter((item) => item?.id && item.id !== currentUserId));
+
+                const chats = chatsResponse?.data || [];
+                const privateChats = chats.filter((chat) => chat?.type === 'private');
+
+                // Build a peerId -> chatId map so we can show message totals for existing 1:1 chats.
+                const peerToChatId = privateChats.reduce((acc, chat) => {
+                    const peerId = getPeerId(chat, currentUserId);
+                    if (peerId && chat?.id) {
+                        acc[peerId] = chat.id;
+                    }
+                    return acc;
+                }, {});
+
+                // Avoid a request storm: only fetch totals for up to 15 existing chats.
+                const peerIds = Object.keys(peerToChatId).slice(0, 15);
+                if (!peerIds.length) {
+                    return;
+                }
+
+                const unreadMap = {};
+                const hasChatMap = {};
+                await Promise.all(
+                    peerIds.map(async (peerId) => {
+                        const chatId = peerToChatId[peerId];
+                        try {
+                            const messagesResponse = await getChatMessages(chatId, { page: 1 });
+                            hasChatMap[peerId] = true;
+                            const latestId = messagesResponse?.data?.[0]?.id || null;
+                            const lastSeen = getLastSeenMessageId(chatId);
+                            unreadMap[peerId] = Boolean(latestId && latestId !== lastSeen);
+                        } catch {
+                            hasChatMap[peerId] = true;
+                            unreadMap[peerId] = false;
+                        }
+                    })
+                );
+
+                if (isMounted) {
+                    setUnreadByUserId(unreadMap);
+                    setHasChatByUserId(hasChatMap);
+                }
             } catch (requestError) {
                 if (!isMounted) {
                     return;
@@ -139,8 +209,22 @@ export function NewChatModal({ isOpen, onClose, onSelectUser, currentUserId }) {
                                         </span>
                                     </span>
 
-                                    <span className="rounded-full bg-[#25F2A0] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-black transition group-hover:bg-[#2cffaa]">
-                                        Select
+                                    <span className="flex items-center gap-2">
+                                        {hasChatByUserId?.[user.id] ? (
+                                            unreadByUserId?.[user.id] ? (
+                                                <span className="rounded-full border border-white/10 bg-[#FFD327] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-black shadow-[3px_3px_0_rgba(0,0,0,0.8)]">
+                                                    Unread
+                                                </span>
+                                            ) : null
+                                        ) : (
+                                            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#FFF3DC]">
+                                                New
+                                            </span>
+                                        )}
+
+                                        <span className="rounded-full bg-[#25F2A0] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-black transition group-hover:bg-[#2cffaa]">
+                                            Chat
+                                        </span>
                                     </span>
                                 </button>
                             ))}
@@ -153,4 +237,3 @@ export function NewChatModal({ isOpen, onClose, onSelectUser, currentUserId }) {
         </div>
     );
 }
-

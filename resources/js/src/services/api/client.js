@@ -15,6 +15,13 @@ apiClient.interceptors.request.use((config) => {
         config.headers.Authorization = `Bearer ${token}`;
     }
 
+    // When using Echo (Pusher/Reverb), send the socket id so Laravel's
+    // broadcast(...)->toOthers() can exclude the current connection.
+    const socketId = window.Echo?.socketId?.();
+    if (socketId) {
+        config.headers['X-Socket-Id'] = socketId;
+    }
+
     return config;
 });
 

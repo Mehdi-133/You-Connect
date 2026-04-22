@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Enums\MessageType;
+use App\Events\MessageDeleted;
+use App\Events\MessageSent;
+use App\Events\MessageUpdated;
 use App\Http\Requests\StoreMessageRequest;
 use App\Models\Chat;
 use App\Models\Message;
@@ -34,8 +37,11 @@ class MessageController extends Controller
             'sender_id' => $request->user()->id,
         ]);
 
+        $message->load('sender:id,name,photo');
+        broadcast(new MessageSent($message))->toOthers();
+
         return response()->json(
-            $message->load('sender:id,name,photo'),
+            $message,
             201
         );
     }
@@ -55,9 +61,10 @@ class MessageController extends Controller
             'content' => $request->input('content'),
         ]);
 
-        return response()->json(
-            $message->load('sender:id,name,photo')
-        );
+        $message->load('sender:id,name,photo');
+        broadcast(new MessageUpdated($message))->toOthers();
+
+        return response()->json($message);
     }
 
 
@@ -65,7 +72,12 @@ class MessageController extends Controller
     {
         $this->authorize('delete', $message);
 
+        $chatId = $message->chat_id;
+        $messageId = $message->id;
+
         $message->delete();
+
+        broadcast(new MessageDeleted($chatId, $messageId))->toOthers();
 
         return response()->json([
             'message' => 'Message deleted',

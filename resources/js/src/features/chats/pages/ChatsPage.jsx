@@ -7,6 +7,7 @@ import { EmptyState } from '../../../shared/ui/feedback/EmptyState';
 import { useAuth } from '../../../hooks/useAuth';
 import { UserAvatar } from '../../../shared/components/UserAvatar';
 import { getChats, createChat } from '../../../services/api/chats.service';
+import { getChatMessages } from '../../../services/api/messages.service';
 import { NewChatModal } from '../components/NewChatModal';
 
 function safeText(value, fallback = '') {
@@ -45,6 +46,34 @@ function formatRelativeTime(value) {
     return `${diffDays}d`;
 }
 
+function getLastSeenKey(chatId) {
+    return `youconnect_chat_last_seen_${chatId}`;
+}
+
+function getLastSeenMessageId(chatId) {
+    const raw = localStorage.getItem(getLastSeenKey(chatId));
+    if (!raw) {
+        return null;
+    }
+
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
+function setLastSeenMessageId(chatId, messageId) {
+    if (!chatId || !messageId) {
+        return;
+    }
+
+    const numeric = Number(messageId);
+    if (!Number.isFinite(numeric)) {
+        return;
+    }
+
+    localStorage.setItem(getLastSeenKey(chatId), String(numeric));
+    window.dispatchEvent(new CustomEvent('youconnect:chat-seen', { detail: { chatId: String(chatId), messageId: numeric } }));
+}
+
 export function ChatsPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -54,6 +83,7 @@ export function ChatsPage() {
     const [isCreating, setIsCreating] = useState(false);
     const [createError, setCreateError] = useState('');
     const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+    const [latestMessageByChatId, setLatestMessageByChatId] = useState({});
 
     useEffect(() => {
         let isMounted = true;
@@ -69,7 +99,29 @@ export function ChatsPage() {
                     return;
                 }
 
-                setChats(response?.data || []);
+                const items = response?.data || [];
+                setChats(items);
+
+                // Best-effort: fetch latest message for visible chats so unread indicators work immediately.
+                const latestPairs = await Promise.all(
+                    items.slice(0, 10).map(async (chat) => {
+                        try {
+                            const messagesResponse = await getChatMessages(chat.id, { page: 1 });
+                            const latest = messagesResponse?.data?.[0] || null;
+                            return [String(chat.id), latest];
+                        } catch {
+                            return [String(chat.id), null];
+                        }
+                    })
+                );
+
+                if (isMounted) {
+                    const nextLatest = latestPairs.reduce((acc, [id, msg]) => {
+                        acc[id] = msg;
+                        return acc;
+                    }, {});
+                    setLatestMessageByChatId(nextLatest);
+                }
             } catch (requestError) {
                 if (!isMounted) {
                     return;
@@ -93,18 +145,53 @@ export function ChatsPage() {
         };
     }, []);
 
+    useEffect(() => {
+        if (!window.Echo) {
+            return undefined;
+        }
+
+        const chatIds = chats.map((chat) => chat?.id).filter(Boolean);
+        const channels = chatIds.map((id) => window.Echo.private(`chat.${id}`));
+
+        channels.forEach((channel, index) => {
+            const chatId = String(chatIds[index]);
+            channel.listen('.message.sent', (payload) => {
+                const incoming = payload?.message;
+                if (!incoming?.id) {
+                    return;
+                }
+
+                setLatestMessageByChatId((current) => {
+                    const next = { ...(current || {}) };
+                    next[chatId] = incoming;
+                    return next;
+                });
+            });
+        });
+
+        return () => {
+            chatIds.forEach((id) => window.Echo.leave(`chat.${id}`));
+        };
+    }, [chats]);
+
     const chatRows = useMemo(() => {
         return chats.map((chat) => {
             const peer = getPeer(chat, user?.id);
+            const latest = latestMessageByChatId?.[String(chat.id)] || null;
+            const latestId = latest?.id || null;
+            const lastSeen = getLastSeenMessageId(chat.id);
+            const hasUnread = Boolean(latestId && latestId !== lastSeen);
             return {
                 chat,
                 peer,
                 title: peer?.name || safeText(chat?.name, 'Chat'),
                 subtitle: peer ? 'Private chat' : 'Conversation',
-                time: formatRelativeTime(chat?.updated_at || chat?.created_at),
+                time: formatRelativeTime(latest?.created_at || chat?.updated_at || chat?.created_at),
+                preview: latest?.content ? safeText(latest.content, '') : '',
+                hasUnread,
             };
         });
-    }, [chats, user?.id]);
+    }, [chats, user?.id, latestMessageByChatId]);
 
     async function handleCreatePrivateChat(selectedUser) {
         if (!selectedUser?.id || !user?.id) {
@@ -236,10 +323,16 @@ export function ChatsPage() {
             </SectionCard>
 
             <div className="grid gap-3">
-                {chatRows.map(({ chat, peer, title, subtitle, time }) => (
+                {chatRows.map(({ chat, peer, title, subtitle, time, preview, hasUnread }) => (
                     <Link
                         key={chat.id}
                         to={`/app/chats/${chat.id}`}
+                        onClick={() => {
+                            const latest = latestMessageByChatId?.[String(chat.id)];
+                            if (latest?.id) {
+                                setLastSeenMessageId(chat.id, latest.id);
+                            }
+                        }}
                         className="surface group relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0.02)_100%)] p-5 shadow-[6px_6px_0_rgba(0,0,0,0.82)] transition hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_18px_48px_rgba(0,0,0,0.45)]"
                     >
                         <div className="pointer-events-none absolute inset-0 opacity-90 bg-[radial-gradient(circle_at_top_right,rgba(163,77,255,0.12),transparent_30%),radial-gradient(circle_at_10%_20%,rgba(37,242,160,0.08),transparent_26%)]" />
@@ -249,12 +342,25 @@ export function ChatsPage() {
                             <div className="flex min-w-0 items-center gap-4">
                                 <UserAvatar name={title} photo={peer?.photo} size="md" ringClassName="from-[#29CFFF] via-[#25F2A0] to-[#FFD327]" />
                                 <div className="min-w-0">
-                                    <p className="truncate font-display text-2xl font-extrabold text-[#FFF3DC] transition group-hover:text-[#25F2A0]">
-                                        {title}
-                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="truncate font-display text-2xl font-extrabold text-[#FFF3DC] transition group-hover:text-[#25F2A0]">
+                                            {title}
+                                        </p>
+                                        {hasUnread ? (
+                                            <span className="inline-flex items-center gap-2 rounded-full border border-[#25F2A0]/25 bg-[#25F2A0]/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                                <span className="h-2 w-2 rounded-full bg-[#25F2A0]" />
+                                                New
+                                            </span>
+                                        ) : null}
+                                    </div>
                                     <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#d8cfbd]">
                                         {subtitle}
                                     </p>
+                                    {preview ? (
+                                        <p className="mt-2 line-clamp-1 text-sm text-white/45">
+                                            {preview}
+                                        </p>
+                                    ) : null}
                                 </div>
                             </div>
 
@@ -282,4 +388,3 @@ export function ChatsPage() {
         </div>
     );
 }
-

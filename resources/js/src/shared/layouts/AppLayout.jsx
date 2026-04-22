@@ -7,6 +7,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { getNotifications } from '../../services/api/notifications.service';
 import { getUser } from '../../services/api/users.service';
 import { createChat } from '../../services/api/chats.service';
+import { getChats } from '../../services/api/chats.service';
+import { getChatMessages } from '../../services/api/messages.service';
 import { NewChatModal } from '../../features/chats/components/NewChatModal';
 import {
     getRoleLabel,
@@ -100,6 +102,31 @@ function GridIcon() {
     );
 }
 
+function getLastSeenKey(chatId) {
+    return `youconnect_chat_last_seen_${chatId}`;
+}
+
+function getLastSeenMessageId(chatId) {
+    const raw = localStorage.getItem(getLastSeenKey(chatId));
+    if (!raw) {
+        return null;
+    }
+
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
+function computeUnreadCount(latestByChatId = {}) {
+    return Object.entries(latestByChatId).reduce((count, [chatId, latestId]) => {
+        if (!latestId) {
+            return count;
+        }
+
+        const lastSeen = getLastSeenMessageId(chatId);
+        return latestId !== lastSeen ? count + 1 : count;
+    }, 0);
+}
+
 export function AppLayout() {
     const location = useLocation();
     const navigate = useNavigate();
@@ -112,6 +139,10 @@ export function AppLayout() {
     const [isChatPickerOpen, setIsChatPickerOpen] = useState(false);
     const [isCreatingChat, setIsCreatingChat] = useState(false);
     const [chatCreateError, setChatCreateError] = useState('');
+    const [chatUnreadCount, setChatUnreadCount] = useState(0);
+    const [chatLatestMessageIdByChatId, setChatLatestMessageIdByChatId] = useState({});
+    const chatSubscriptionsRef = useRef([]);
+    const chatLatestRef = useRef({});
     const profileMenuRef = useRef(null);
     const navigationItems = getPrimaryNavigationItems();
     const roleAccent = useMemo(() => getRoleAccent(user), [user]);
@@ -162,13 +193,16 @@ export function AppLayout() {
                 setUnreadNotificationsCount(0);
                 setProfileBadgeCount(0);
                 setProfileReputation(0);
+                setChatUnreadCount(0);
+                setChatLatestMessageIdByChatId({});
                 return;
             }
 
             try {
-                const [notificationsResponse, userProfile] = await Promise.all([
+                const [notificationsResponse, userProfile, chatsResponse] = await Promise.all([
                     getNotifications(),
                     getUser(user.id),
+                    getChats({ page: 1 }),
                 ]);
 
                 if (!isMounted) {
@@ -178,6 +212,28 @@ export function AppLayout() {
                 setUnreadNotificationsCount(notificationsResponse?.unread_count || 0);
                 setProfileBadgeCount(userProfile?.badges?.length || 0);
                 setProfileReputation(userProfile?.reputation || 0);
+
+                // Best-effort unread count (frontend-only): compare latest message id vs last-seen stored locally.
+                const chats = chatsResponse?.data || [];
+                const latestPairs = await Promise.all(
+                    chats.slice(0, 10).map(async (chat) => {
+                        try {
+                            const messagesResponse = await getChatMessages(chat.id, { page: 1 });
+                            const latestId = messagesResponse?.data?.[0]?.id || null;
+                            return [String(chat.id), latestId];
+                        } catch {
+                            return [String(chat.id), null];
+                        }
+                    })
+                );
+
+                const latestByChatId = latestPairs.reduce((acc, [id, latest]) => {
+                    acc[id] = latest;
+                    return acc;
+                }, {});
+
+                setChatLatestMessageIdByChatId(latestByChatId);
+                setChatUnreadCount(computeUnreadCount(latestByChatId));
             } catch {
                 if (!isMounted) {
                     return;
@@ -186,6 +242,8 @@ export function AppLayout() {
                 setUnreadNotificationsCount(0);
                 setProfileBadgeCount(0);
                 setProfileReputation(0);
+                setChatUnreadCount(0);
+                setChatLatestMessageIdByChatId({});
             }
         }
 
@@ -195,6 +253,76 @@ export function AppLayout() {
             isMounted = false;
         };
     }, [user]);
+
+    useEffect(() => {
+        chatLatestRef.current = chatLatestMessageIdByChatId || {};
+    }, [chatLatestMessageIdByChatId]);
+
+    useEffect(() => {
+        // Realtime unread count updates (no refresh):
+        // - subscribe to chat.{id} channels and update latest message id when a message arrives
+        // - listen for "chat seen" events from the thread page to recompute unread count instantly
+        if (!user?.id) {
+            return undefined;
+        }
+
+        if (!window.Echo) {
+            return undefined;
+        }
+
+        // Clean previous subscriptions (if any).
+        chatSubscriptionsRef.current.forEach((chatId) => {
+            window.Echo.leave(`chat.${chatId}`);
+        });
+        chatSubscriptionsRef.current = [];
+
+        const chatIds = Object.keys(chatLatestRef.current || {});
+        chatIds.forEach((chatId) => {
+            chatSubscriptionsRef.current.push(chatId);
+            const channel = window.Echo.private(`chat.${chatId}`);
+
+            channel.listen('.message.sent', (payload) => {
+                const incoming = payload?.message;
+                if (!incoming?.id) {
+                    return;
+                }
+
+                setChatLatestMessageIdByChatId((current) => {
+                    const next = { ...(current || {}) };
+                    next[String(chatId)] = incoming.id;
+                    setChatUnreadCount(computeUnreadCount(next));
+                    return next;
+                });
+            });
+
+            channel.listen('.message.deleted', () => {
+                // Keep latest id as-is; deletion doesn't necessarily change unread state.
+            });
+
+            channel.listen('.message.updated', () => {
+                // Keep latest id as-is; updates don't affect unread state.
+            });
+        });
+
+        function handleSeen(event) {
+            const seenChatId = event?.detail?.chatId;
+            if (!seenChatId) {
+                return;
+            }
+
+            setChatUnreadCount(computeUnreadCount(chatLatestRef.current));
+        }
+
+        window.addEventListener('youconnect:chat-seen', handleSeen);
+
+        return () => {
+            window.removeEventListener('youconnect:chat-seen', handleSeen);
+            chatSubscriptionsRef.current.forEach((chatId) => {
+                window.Echo.leave(`chat.${chatId}`);
+            });
+            chatSubscriptionsRef.current = [];
+        };
+    }, [user?.id, Object.keys(chatLatestMessageIdByChatId || {}).join(',')]);
 
     useEffect(() => {
         function handleOutsideClick(event) {
@@ -295,6 +423,11 @@ export function AppLayout() {
                             aria-label="Start a new chat"
                         >
                             <ChatIcon />
+                            {chatUnreadCount ? (
+                                <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[#25F2A0] px-1.5 py-1 text-[10px] font-black leading-none text-black">
+                                    {chatUnreadCount}
+                                </span>
+                            ) : null}
                         </button>
 
                         <button type="button" className="rounded-full border border-white/10 bg-white/5 p-3 text-[#d8cfbd] transition hover:bg-white/10 hover:text-white">
