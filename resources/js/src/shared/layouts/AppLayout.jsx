@@ -17,6 +17,7 @@ import {
     isFormateur,
 } from '../utils/roles';
 import { prefetchRouteChunk } from '../../router/routeChunks';
+import { Modal } from '../ui/overlay/Modal';
 
 function getPrimaryNavigationItems() {
     return [
@@ -103,6 +104,16 @@ function GridIcon() {
     );
 }
 
+function MenuIcon() {
+    return (
+        <svg viewBox="0 0 20 20" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
+            <path d="M4 6h12" />
+            <path d="M4 10h12" />
+            <path d="M4 14h12" />
+        </svg>
+    );
+}
+
 function getLastSeenKey(chatId) {
     return `youconnect_chat_last_seen_${chatId}`;
 }
@@ -137,6 +148,7 @@ export function AppLayout() {
     const [profileBadgeCount, setProfileBadgeCount] = useState(0);
     const [profileReputation, setProfileReputation] = useState(0);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isChatPickerOpen, setIsChatPickerOpen] = useState(false);
     const [isCreatingChat, setIsCreatingChat] = useState(false);
     const [chatCreateError, setChatCreateError] = useState('');
@@ -341,6 +353,7 @@ export function AppLayout() {
 
     useEffect(() => {
         setIsProfileMenuOpen(false);
+        setIsMobileMenuOpen(false);
     }, [location.pathname]);
 
     async function handleLogout() {
@@ -358,14 +371,27 @@ export function AppLayout() {
     }
 
     return (
-        <div className="min-h-screen bg-[#05020d] text-white">
+        <div className="min-h-screen overflow-x-hidden bg-[#05020d] text-white">
             <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(163,77,255,0.18),transparent_20%),radial-gradient(circle_at_20%_35%,rgba(37,242,160,0.08),transparent_18%),radial-gradient(circle_at_80%_20%,rgba(255,102,214,0.08),transparent_16%)]" />
 
-            <header className="sticky top-0 z-30 border-b border-white/10 bg-[#070311]/95 px-4 py-3 backdrop-blur-xl lg:px-6">
-                <div className="flex flex-wrap items-center gap-4 xl:grid xl:grid-cols-[auto_1fr_auto] xl:items-center xl:gap-6">
-                    <div className="flex items-center gap-4">
+            <header className="sticky top-0 z-30 border-b border-white/10 bg-[#070311]/95 px-4 py-2 backdrop-blur-xl sm:py-3 lg:px-6">
+                <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 xl:gap-6">
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setIsMobileMenuOpen(true)}
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[#d8cfbd] shadow-[4px_4px_0_rgba(0,0,0,0.75)] transition hover:bg-white/10 hover:text-white xl:hidden"
+                            aria-label="Open menu"
+                        >
+                            <MenuIcon />
+                        </button>
+
                         <Link to="/app" className="shrink-0">
-                            <YouConnectLogo compact showTag={false} className="max-w-[210px]" />
+                            <YouConnectLogo
+                                compact
+                                showTag={false}
+                                className="max-w-[210px] origin-left scale-[0.82] sm:scale-100"
+                            />
                         </Link>
                     </div>
 
@@ -399,7 +425,7 @@ export function AppLayout() {
                         ))}
                     </nav>
 
-                    <div className="ml-auto flex items-center gap-3 xl:ml-0 xl:justify-self-end">
+                    <div className="flex items-center justify-end gap-2 xl:justify-self-end">
                         <label className="hidden items-center gap-3 rounded-full border border-white/10 bg-[#0B0126] px-4 py-2 text-sm text-[#d8cfbd] lg:flex">
                             <SearchIcon />
                             <input
@@ -409,38 +435,43 @@ export function AppLayout() {
                             />
                         </label>
 
-                        <Link
-                            to="/app/notifications"
-                            onMouseEnter={() => prefetchRouteChunk('/app/notifications')}
-                            onFocus={() => prefetchRouteChunk('/app/notifications')}
-                            className="relative rounded-full border border-white/10 bg-white/5 p-3 text-[#d8cfbd] transition hover:bg-white/10 hover:text-white"
-                        >
-                            <BellIcon />
-                            {unreadNotificationsCount ? (
-                                <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[#FFD327] px-1.5 py-1 text-[10px] font-black leading-none text-black">
-                                    {unreadNotificationsCount}
-                                </span>
-                            ) : null}
-                        </Link>
+                        <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 shadow-[4px_4px_0_rgba(0,0,0,0.75)] backdrop-blur">
+                            <Link
+                                to="/app/notifications"
+                                onMouseEnter={() => prefetchRouteChunk('/app/notifications')}
+                                onFocus={() => prefetchRouteChunk('/app/notifications')}
+                                className="relative inline-flex h-11 w-11 items-center justify-center rounded-full text-[#d8cfbd] transition hover:bg-white/10 hover:text-white"
+                            >
+                                <BellIcon />
+                                {unreadNotificationsCount ? (
+                                    <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-5 items-center justify-center rounded-full bg-[#FFD327] px-1.5 py-1 text-[10px] font-black leading-none text-black">
+                                        {unreadNotificationsCount}
+                                    </span>
+                                ) : null}
+                            </Link>
 
-                        <button
-                            type="button"
-                            onClick={() => setIsChatPickerOpen(true)}
-                            disabled={isCreatingChat}
-                            className="relative rounded-full border border-white/10 bg-white/5 p-3 text-[#d8cfbd] transition hover:bg-white/10 hover:text-white"
-                            aria-label="Start a new chat"
-                        >
-                            <ChatIcon />
-                            {chatUnreadCount ? (
-                                <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[#25F2A0] px-1.5 py-1 text-[10px] font-black leading-none text-black">
-                                    {chatUnreadCount}
-                                </span>
-                            ) : null}
-                        </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsChatPickerOpen(true)}
+                                disabled={isCreatingChat}
+                                className="relative inline-flex h-11 w-11 items-center justify-center rounded-full text-[#d8cfbd] transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-70"
+                                aria-label="Start a new chat"
+                            >
+                                <ChatIcon />
+                                {chatUnreadCount ? (
+                                    <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-5 items-center justify-center rounded-full bg-[#25F2A0] px-1.5 py-1 text-[10px] font-black leading-none text-black">
+                                        {chatUnreadCount}
+                                    </span>
+                                ) : null}
+                            </button>
 
-                        <button type="button" className="rounded-full border border-white/10 bg-white/5 p-3 text-[#d8cfbd] transition hover:bg-white/10 hover:text-white">
-                            <BookmarkIcon />
-                        </button>
+                            <button
+                                type="button"
+                                className="hidden h-11 w-11 items-center justify-center rounded-full text-[#d8cfbd] transition hover:bg-white/10 hover:text-white sm:inline-flex"
+                                aria-label="Saved items"
+                            >
+                                <BookmarkIcon />
+                            </button>
 
                         <div ref={profileMenuRef} className="relative">
                             <button
@@ -448,7 +479,17 @@ export function AppLayout() {
                                 onClick={() => {
                                     setIsProfileMenuOpen((current) => !current);
                                 }}
-                                className="group flex items-center gap-3 rounded-[1.6rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.03)_100%)] px-3 py-2.5 shadow-[4px_4px_0_rgba(0,0,0,0.7)] transition hover:border-white/15 hover:bg-[linear-gradient(135deg,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0.05)_100%)]"
+                                className="inline-flex h-11 w-11 items-center justify-center rounded-full transition hover:bg-white/10 hover:text-white xl:hidden"
+                            >
+                                <UserAvatar name={user?.name} photo={user?.photo} size="sm" ringClassName={roleAccent.ring} />
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsProfileMenuOpen((current) => !current);
+                                }}
+                                className="group hidden items-center gap-3 rounded-[1.6rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.03)_100%)] px-3 py-2.5 shadow-[4px_4px_0_rgba(0,0,0,0.7)] transition hover:border-white/15 hover:bg-[linear-gradient(135deg,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0.05)_100%)] xl:flex"
                             >
                                 <UserAvatar
                                     name={user?.name}
@@ -491,6 +532,12 @@ export function AppLayout() {
                                         {isAdmin(user) ? (
                                             <>
                                                 <Link
+                                                    to="/app/admin/users"
+                                                    className="rounded-[1rem] border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#d8cfbd] transition hover:bg-white/10 hover:text-white"
+                                                >
+                                                    Users
+                                                </Link>
+                                                <Link
                                                     to="/app/admin/badges-interests"
                                                     className="rounded-[1rem] border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#d8cfbd] transition hover:bg-white/10 hover:text-white"
                                                 >
@@ -529,45 +576,17 @@ export function AppLayout() {
                                 </div>
                             ) : null}
                         </div>
+                        </div>
                     </div>
                 </div>
             </header>
 
-            <div className="relative">
-                <div className="min-h-screen">
-                    <div className="border-b border-white/10 px-4 py-5 lg:hidden">
-                        <div className="flex gap-3 overflow-x-auto">
-                            {navigationItems.map((item) => (
-                                <NavLink
-                                    key={item.to}
-                                    to={item.to}
-                                    end={item.to === '/app'}
-                                    onMouseEnter={() => prefetchRouteChunk(item.to)}
-                                    onFocus={() => prefetchRouteChunk(item.to)}
-                                    className={({ isActive }) =>
-                                        [
-                                            'whitespace-nowrap rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.14em] transition',
-                                            isActive
-                                                ? 'bg-[#FFD327] text-black shadow-[0_10px_24px_rgba(0,0,0,0.35)] hover:bg-[#ffd94f]'
-                                                : 'border border-white/10 bg-white/5 text-[#d8cfbd] hover:bg-white/10 hover:text-white',
-                                        ].join(' ')
-                                    }
-                                >
-                                    <span className="flex items-center gap-2">
-                                        <span>{item.label}</span>
-                                        {item.badge ? (
-                                            <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[#1E2234] px-2 py-1 text-[10px] font-black leading-none text-[#FFF3DC]">
-                                                {item.badge}
-                                            </span>
-                                        ) : null}
-                                    </span>
-                                </NavLink>
-                            ))}
-                        </div>
-                    </div>
-
+             <div className="relative">
+                 <div className="min-h-screen">
                     <main className="px-4 py-6 lg:px-6 lg:py-8">
-                        <Outlet context={{ setUnreadNotificationsCount }} />
+                        <div className="mx-auto w-full max-w-[1280px]">
+                            <Outlet context={{ setUnreadNotificationsCount }} />
+                        </div>
                     </main>
                 </div>
             </div>
@@ -578,6 +597,44 @@ export function AppLayout() {
                 onSelectUser={handleCreatePrivateChat}
                 currentUserId={user?.id}
             />
+
+            <Modal
+                isOpen={isMobileMenuOpen}
+                onClose={() => setIsMobileMenuOpen(false)}
+                eyebrow="Navigation"
+                title="Menu"
+                description="Jump between your YouConnect sections."
+                size="sm"
+                ariaLabel="Close menu"
+            >
+                <div className="grid gap-2">
+                    {navigationItems.map((item) => (
+                        <NavLink
+                            key={item.to}
+                            to={item.to}
+                            end={item.to === '/app'}
+                            onMouseEnter={() => prefetchRouteChunk(item.to)}
+                            onFocus={() => prefetchRouteChunk(item.to)}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={({ isActive }) =>
+                                [
+                                    'flex items-center justify-between rounded-[1.2rem] border px-4 py-3 text-sm font-black transition',
+                                    isActive
+                                        ? 'border-white/15 bg-white/10 text-[#FFF3DC] shadow-[0_10px_24px_rgba(0,0,0,0.35)]'
+                                        : 'border-white/10 bg-white/5 text-[#d8cfbd] hover:bg-white/10 hover:text-white',
+                                ].join(' ')
+                            }
+                        >
+                            <span className="uppercase tracking-[0.14em]">{item.label}</span>
+                            {item.badge ? (
+                                <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[#FFD327] px-2 py-1 text-[10px] font-black leading-none text-black">
+                                    {item.badge}
+                                </span>
+                            ) : null}
+                        </NavLink>
+                    ))}
+                </div>
+            </Modal>
             {chatCreateError ? (
                 <div className="fixed bottom-6 right-6 z-40 max-w-[420px] rounded-[1.4rem] border border-white/10 bg-[#0B0126] p-4 shadow-[8px_8px_0_rgba(0,0,0,0.85)]">
                     <p className="text-xs font-black uppercase tracking-[0.18em] text-[#FFD327]">Chat</p>

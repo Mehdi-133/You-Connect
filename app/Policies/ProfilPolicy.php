@@ -12,6 +12,11 @@ class ProfilPolicy
         return true;
     }
 
+    public function create(User $user): bool
+    {
+        return $user->isAdmin();
+    }
+
     public function view(User $user, User $model): bool
     {
         return true;

@@ -19,6 +19,7 @@ export const routeChunks = {
     chatThread: () => import('../features/chats/pages/ChatThreadPage'),
     adminBadgesInterests: () => import('../features/admin/pages/BadgeInterestAdminPage'),
     adminTags: () => import('../features/admin/pages/TagAdminPage'),
+    adminUsers: () => import('../features/admin/pages/UserAdminPage'),
 };
 
 export function prefetchRouteChunk(pathname) {
@@ -42,5 +43,5 @@ export function prefetchRouteChunk(pathname) {
     if (pathname === '/app/chats') return void routeChunks.chats();
     if (pathname === '/app/admin/badges-interests') return void routeChunks.adminBadgesInterests();
     if (pathname === '/app/admin/tags') return void routeChunks.adminTags();
+    if (pathname === '/app/admin/users') return void routeChunks.adminUsers();
 }
-

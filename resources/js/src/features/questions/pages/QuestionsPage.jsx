@@ -484,14 +484,14 @@ export function QuestionsPage() {
     }
 
     return (
-        <div className="grid gap-6">
+        <div className="mx-auto grid w-full max-w-[1080px] gap-6">
             <SectionCard
                 eyebrow="Questions"
                 title="Question feed with real backend data"
                 description="This page now reads the latest questions from Laravel and lets you scan topics, authors, answer counts, and status quickly."
-                className="hero-gradient"
+                className="hero-gradient p-4 sm:p-6"
             >
-                <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <p className="text-xs font-black uppercase tracking-[0.2em] text-white/60">
                             Ask with clarity. Tag the topic. Get faster answers.
@@ -505,6 +505,8 @@ export function QuestionsPage() {
 
                     <CreateActionButton
                         label="Create question"
+                        shortLabel="Create"
+                        className="w-full sm:w-auto"
                         onClick={() => {
                             setFormError('');
                             setFieldErrors({});
@@ -526,12 +528,12 @@ export function QuestionsPage() {
                     <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
                         Filter by topic
                     </p>
-                    <div className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <div className="-mx-2 flex gap-3 overflow-x-auto px-2 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0">
                         <button
                             type="button"
                             onClick={() => setSelectedFilterTagId('')}
                             className={[
-                                'festival-card shrink-0 rounded-full px-5 py-3 text-xs font-black uppercase tracking-[0.18em] shadow-[4px_4px_0_rgba(0,0,0,0.85)] transition',
+                                'festival-card shrink-0 rounded-full px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.18em] shadow-[4px_4px_0_rgba(0,0,0,0.85)] transition sm:px-5 sm:py-3 sm:text-xs',
                                 selectedFilterTagId
                                     ? 'border border-white/10 bg-white/10 text-[#d8cfbd] hover:bg-white/15 hover:text-white'
                                     : 'border-2 border-black bg-[#25F2A0] text-black',
@@ -549,7 +551,7 @@ export function QuestionsPage() {
                                     type="button"
                                     onClick={() => setSelectedFilterTagId(String(tag.id))}
                                     className={[
-                                        'festival-card shrink-0 rounded-full px-5 py-3 text-xs font-black uppercase tracking-[0.18em] shadow-[4px_4px_0_rgba(0,0,0,0.85)] transition',
+                                        'festival-card shrink-0 rounded-full px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.18em] shadow-[4px_4px_0_rgba(0,0,0,0.85)] transition sm:px-5 sm:py-3 sm:text-xs',
                                         isActive
                                             ? 'border-2 border-black bg-[#FFD327] text-black'
                                             : 'border border-white/10 bg-white/10 text-[#d8cfbd] hover:bg-white/15 hover:text-white',
@@ -571,7 +573,7 @@ export function QuestionsPage() {
                             <button
                                 type="button"
                                 onClick={() => setSelectedFilterTagId('')}
-                                className="festival-card shrink-0 rounded-full border border-[#ff8f8f]/40 bg-[#2a0b15] px-5 py-3 text-xs font-black uppercase tracking-[0.18em] text-[#ffb8b8] shadow-[4px_4px_0_rgba(0,0,0,0.85)] transition hover:bg-[#39101d]"
+                                className="festival-card shrink-0 rounded-full border border-[#ff8f8f]/40 bg-[#2a0b15] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.18em] text-[#ffb8b8] shadow-[4px_4px_0_rgba(0,0,0,0.85)] transition hover:bg-[#39101d] sm:px-5 sm:py-3 sm:text-xs"
                             >
                                 Clear
                             </button>
@@ -588,7 +590,7 @@ export function QuestionsPage() {
                     <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
                         Filter by status
                     </p>
-                    <div className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <div className="-mx-2 flex gap-3 overflow-x-auto px-2 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0">
                         {statusFilters.map((item) => {
                             const isActive = item === selectedStatus;
                             return (
@@ -597,7 +599,7 @@ export function QuestionsPage() {
                                     type="button"
                                     onClick={() => setSelectedStatus(item)}
                                     className={[
-                                        'festival-card shrink-0 rounded-full px-5 py-3 text-xs font-black uppercase tracking-[0.18em] shadow-[4px_4px_0_rgba(0,0,0,0.85)] transition',
+                                        'festival-card shrink-0 rounded-full px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.18em] shadow-[4px_4px_0_rgba(0,0,0,0.85)] transition sm:px-5 sm:py-3 sm:text-xs',
                                         isActive
                                             ? 'border-2 border-black bg-[#25F2A0] text-black'
                                             : 'border border-white/10 bg-white/10 text-[#d8cfbd] hover:bg-white/15 hover:text-white',

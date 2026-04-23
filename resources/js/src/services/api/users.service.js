@@ -5,6 +5,11 @@ export async function getUsers(params = {}) {
     return data;
 }
 
+export async function inviteUser(payload) {
+    const { data } = await apiClient.post('/users', payload);
+    return data;
+}
+
 export async function getUser(userId) {
     const { data } = await apiClient.get(`/users/${userId}`);
     return data;

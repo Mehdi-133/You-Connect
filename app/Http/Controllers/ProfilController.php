@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\UserInvitationMail;
 use App\Models\Badge;
 use App\Models\User;
 use App\Enums\UserRole;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use App\Enums\NotificationType;
 use App\Services\NotificationService;
 use App\Models\Interest;
@@ -14,6 +17,42 @@ use App\Models\Interest;
 
 class ProfilController extends Controller
 {
+    public function store(Request $request)
+    {
+        $this->authorize('create', User::class);
+
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'role' => 'required|in:visitor,student,bde_membre,formateur,admin',
+            'campus' => 'required|in:nador,safi,youssoufia',
+            'class' => 'required|in:dev room,dar hamza',
+            'photo' => 'sometimes|nullable|string',
+            'bio' => 'sometimes|nullable|string',
+        ]);
+
+        $temporaryPassword = Str::random(12);
+
+        $user = User::create([
+            'name' => trim($validated['first_name'] . ' ' . $validated['last_name']),
+            'email' => $validated['email'],
+            'role' => $validated['role'],
+            'campus' => $validated['campus'],
+            'class' => $validated['class'],
+            'photo' => $validated['photo'] ?? null,
+            'bio' => $validated['bio'] ?? null,
+            'password' => Hash::make($temporaryPassword),
+        ]);
+
+        Mail::to($user->email)->send(new UserInvitationMail($user, $temporaryPassword));
+
+        return response()->json([
+            'message' => 'User created and invitation email sent.',
+            'user' => $user->only(['id', 'name', 'email', 'role', 'campus', 'class', 'status', 'created_at']),
+        ], 201);
+    }
+
     public function index()
     {
         $this->authorize('viewAny', User::class);

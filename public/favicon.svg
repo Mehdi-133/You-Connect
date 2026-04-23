@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="YC">
+  <!-- Simple YC tile favicon (matches the reference) -->
+  <rect x="0" y="0" width="64" height="64" rx="14" fill="#0A1C57"/>
+  <rect x="0" y="0" width="64" height="64" rx="14" fill="#05020d" opacity="0.18"/>
+
+  <g font-family="system-ui, -apple-system, Segoe UI, Arial, sans-serif" font-weight="900">
+    <!-- Subtle shadow for crisp readability at small sizes -->
+    <text x="14" y="40" font-size="28" fill="#000" opacity="0.35">YC</text>
+    <text x="14" y="40" font-size="28" fill="#29CFFF">Y</text>
+    <text x="32" y="40" font-size="28" fill="#FF66D6">C</text>
+  </g>
+</svg>

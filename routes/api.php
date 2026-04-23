@@ -73,6 +73,7 @@ Route::middleware('auth:sanctum', 'check.status')->group(function () {
 
     Route::post('users/{user}/badges/{badge}', [ProfilController::class, 'assignBadge']);
     Route::delete('users/{user}/badges/{badge}', [ProfilController::class, 'revokeBadge']);
+    Route::post('users', [ProfilController::class, 'store']);
     Route::get('users', [ProfilController::class, 'index']);
     Route::get('users/{user}', [ProfilController::class, 'show']);
     Route::put('users/{user}', [ProfilController::class, 'update']);

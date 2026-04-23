@@ -320,7 +320,8 @@ export function UserIntelligenceTable({ users = [], mode = 'admin', currentUserI
             </div>
 
             <div className="mt-5 overflow-hidden rounded-[1.6rem] border border-white/10 bg-[#09051a]/70">
-                <div className="max-h-[460px] overflow-auto">
+                {/* Desktop/tablet table */}
+                <div className="hidden max-h-[460px] overflow-auto md:block">
                     <table className="w-full min-w-[980px] border-collapse">
                         <thead>
                             <tr className="border-b border-white/10 text-left text-[11px] font-black uppercase tracking-[0.16em] text-[#d8cfbd]">
@@ -450,6 +451,119 @@ export function UserIntelligenceTable({ users = [], mode = 'admin', currentUserI
                             )}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile stacked list */}
+                <div className="grid gap-3 p-3 md:hidden">
+                    {filtered.length ? (
+                        filtered.map((u) => {
+                            const statusMeta = getStatusMeta(u?.status);
+                            const isSelf = currentUserId && String(u?.id) === String(currentUserId);
+                            const canManage = mode === 'admin' && !isSelf;
+                            const isBanned = String(u?.status || 'active') === 'banned';
+
+                            const profileWarnings = [
+                                !u?.photo ? 'No photo' : '',
+                                !String(u?.bio || '').trim() ? 'No bio' : '',
+                            ].filter(Boolean);
+
+                            return (
+                                <div
+                                    key={u.id}
+                                    className="rounded-[1.4rem] border border-white/10 bg-white/5 p-4 shadow-[4px_4px_0_rgba(0,0,0,0.75)]"
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex min-w-0 items-center gap-3">
+                                            <UserAvatar name={u?.name} photo={u?.photo} size="sm" />
+                                            <div className="min-w-0">
+                                                <p className="truncate text-sm font-black text-[#FFF3DC]">{u?.name || 'User'}</p>
+                                                <p className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-[#d8cfbd]">
+                                                    {u?.email || '--'}
+                                                    {u?.class ? ` · ${u.class}` : ''}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <span
+                                            className={[
+                                                'inline-flex shrink-0 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em]',
+                                                statusMeta.className,
+                                            ].join(' ')}
+                                        >
+                                            {statusMeta.label}
+                                        </span>
+                                    </div>
+
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                        <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#FFF3DC]">
+                                            {formatCampus(u?.campus)}
+                                        </span>
+                                        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#d8cfbd]">
+                                            {formatRole(u?.role)}
+                                        </span>
+                                        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#d8cfbd]">
+                                            Seen {formatRelativeTime(u?.last_seen)}
+                                        </span>
+                                        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#d8cfbd]">
+                                            Joined {formatDate(u?.created_at)}
+                                        </span>
+                                        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                            {Number(u?.reputation || 0).toLocaleString()} rep
+                                        </span>
+                                    </div>
+
+                                    {profileWarnings.length ? (
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                            {profileWarnings.slice(0, 2).map((warning) => (
+                                                <span
+                                                    key={warning}
+                                                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#FFD327]"
+                                                >
+                                                    {warning}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    ) : null}
+
+                                    <div className="mt-4 flex justify-end gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenDetails(u.id)}
+                                            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-[#FFF3DC] transition hover:bg-white/10"
+                                        >
+                                            View
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleToggleBan(u)}
+                                            disabled={!canManage || processingUserId === u.id}
+                                            title={
+                                                isSelf
+                                                    ? 'You cannot ban your own account.'
+                                                    : mode !== 'admin'
+                                                        ? 'Only admins can ban/unban users.'
+                                                        : ''
+                                            }
+                                            className={[
+                                                'rounded-full border px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition',
+                                                canManage
+                                                    ? isBanned
+                                                        ? 'border-white/10 bg-[#25F2A0] text-black hover:brightness-110'
+                                                        : 'border-white/10 bg-[#FF66D6] text-black hover:brightness-110'
+                                                    : 'cursor-not-allowed border-white/10 bg-white/5 text-white/35',
+                                            ].join(' ')}
+                                        >
+                                            {isBanned ? 'Unban' : 'Ban'}
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <div className="px-4 py-10 text-center text-sm text-[#d8cfbd]">
+                            No users match these filters.
+                        </div>
+                    )}
                 </div>
             </div>
 

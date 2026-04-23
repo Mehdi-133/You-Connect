@@ -30,6 +30,7 @@ const ChatsPage = lazyNamed(routeChunks.chats, 'ChatsPage');
 const ChatThreadPage = lazyNamed(routeChunks.chatThread, 'ChatThreadPage');
 const BadgeInterestAdminPage = lazyNamed(routeChunks.adminBadgesInterests, 'BadgeInterestAdminPage');
 const TagAdminPage = lazyNamed(routeChunks.adminTags, 'TagAdminPage');
+const UserAdminPage = lazyNamed(routeChunks.adminUsers, 'UserAdminPage');
 
 function RouteFallback() {
     return (
@@ -96,6 +97,14 @@ export function AppRouter() {
                     element={( 
                         <ProtectedRoute isAllowed={isAdmin(user)}>
                             <Suspense fallback={<RouteFallback />}><TagAdminPage /></Suspense>
+                        </ProtectedRoute>
+                    )}
+                />
+                <Route
+                    path="/app/admin/users"
+                    element={( 
+                        <ProtectedRoute isAllowed={isAdmin(user)}>
+                            <Suspense fallback={<RouteFallback />}><UserAdminPage /></Suspense>
                         </ProtectedRoute>
                     )}
                 />
