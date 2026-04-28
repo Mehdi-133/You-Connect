@@ -513,6 +513,9 @@ export function StudentDashboardPage() {
                 >
                     <UserIntelligenceTable
                         users={dashboardData.users || []}
+                        badges={dashboardData.badges || []}
+                        interests={dashboardData.interests || []}
+                        tags={dashboardData.tags || []}
                         mode={isAdmin(user) ? 'admin' : 'formateur'}
                         currentUserId={user?.id || null}
                     />

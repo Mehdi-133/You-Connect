@@ -19,6 +19,8 @@ export function Modal({
     title = '',
     description = '',
     size = 'md',
+    variant = 'default',
+    boundedHeight = false,
     children,
     footer = null,
     ariaLabel = '',
@@ -137,6 +139,8 @@ export function Modal({
         return null;
     }
 
+    const isSectionVariant = variant === 'section';
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <button
@@ -159,27 +163,50 @@ export function Modal({
                     'relative w-full overflow-hidden rounded-[2rem] border border-white/10 bg-[#0B0126] shadow-[16px_16px_0_rgba(0,0,0,0.85)]',
                     'transition duration-200',
                     isVisible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-2 scale-[0.98] opacity-0',
+                    boundedHeight ? 'flex max-h-[90vh] flex-col overflow-hidden' : '',
                     maxWidthClass,
                 ].join(' ')}
             >
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(163,77,255,0.22),transparent_30%),radial-gradient(circle_at_10%_18%,rgba(37,242,160,0.11),transparent_26%),radial-gradient(circle_at_85%_90%,rgba(255,211,39,0.10),transparent_32%)]" />
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,242,160,0.6),rgba(41,207,255,0.55),rgba(255,211,39,0.5),transparent)]" />
 
-                <div className="relative border-b border-white/10 p-6">
+                <div className={['relative p-6', isSectionVariant ? '' : 'border-b border-white/10'].join(' ')}>
                     <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
                             {eyebrow ? (
-                                <p className="text-xs font-black uppercase tracking-[0.22em] text-[#25F2A0]">
-                                    {eyebrow}
-                                </p>
+                                isSectionVariant ? (
+                                    <p className="mb-3 inline-flex rounded-full border border-black/70 bg-[rgb(var(--brand-gold))] px-3 py-1 text-[11px] font-black uppercase tracking-[0.24em] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)]">
+                                        {eyebrow}
+                                    </p>
+                                ) : (
+                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-[#25F2A0]">
+                                        {eyebrow}
+                                    </p>
+                                )
                             ) : null}
                             {title ? (
-                                <p id={titleId} className="mt-2 font-display text-3xl font-extrabold text-[#FFF3DC]">
-                                    {title}
-                                </p>
+                                isSectionVariant ? (
+                                    <h2
+                                        id={titleId}
+                                        className="font-display text-2xl font-extrabold leading-tight text-[#FFF3DC] sm:text-3xl sm:leading-none md:text-4xl"
+                                    >
+                                        {title}
+                                    </h2>
+                                ) : (
+                                    <p id={titleId} className="mt-2 font-display text-3xl font-extrabold text-[#FFF3DC]">
+                                        {title}
+                                    </p>
+                                )
                             ) : null}
                             {description ? (
-                                <p id={descriptionId} className="mt-2 text-sm leading-7 text-[#d8cfbd]">
+                                <p
+                                    id={descriptionId}
+                                    className={
+                                        isSectionVariant
+                                            ? 'mt-2 max-w-2xl text-[13px] leading-7 text-[rgb(var(--fg-muted))] sm:text-sm'
+                                            : 'mt-2 text-sm leading-7 text-[#d8cfbd]'
+                                    }
+                                >
                                     {description}
                                 </p>
                             ) : null}
@@ -197,12 +224,23 @@ export function Modal({
                     </div>
                 </div>
 
-                <div className="relative max-h-[74vh] overflow-auto p-6">
+                <div
+                    className={[
+                        'relative overflow-auto',
+                        boundedHeight ? 'flex-1' : 'max-h-[74vh]',
+                        isSectionVariant ? 'px-6 pb-6' : 'p-6',
+                    ].join(' ')}
+                >
                     {children}
                 </div>
 
                 {footer ? (
-                    <div className="relative border-t border-white/10 bg-[#070112]/70 p-5 backdrop-blur">
+                    <div
+                        className={[
+                            'relative',
+                            isSectionVariant ? 'px-6 pb-6' : 'border-t border-white/10 bg-[#070112]/70 p-5 backdrop-blur',
+                        ].join(' ')}
+                    >
                         {footer}
                     </div>
                 ) : null}

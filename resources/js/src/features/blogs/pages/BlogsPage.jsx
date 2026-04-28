@@ -285,6 +285,7 @@ export function BlogsPage() {
                     eyebrow="Create"
                     title="Create a blog post"
                     description="Share a lesson, tutorial, or community story. Keep it clear and useful."
+                    variant="section"
                     footer={(
                         <div className="flex flex-wrap items-center justify-end gap-3">
                             <button
@@ -305,7 +306,7 @@ export function BlogsPage() {
                         </div>
                     )}
                 >
-                    <form id="create-blog-form" onSubmit={handleCreateBlog} className="grid gap-4">
+                    <form id="create-blog-form" onSubmit={handleCreateBlog} className="grid gap-3">
                         <div>
                             <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
                                 Blog title
@@ -358,9 +359,9 @@ export function BlogsPage() {
                                 name="content"
                                 value={form.content}
                                 onChange={handleInputChange}
-                                rows="8"
+                                rows="6"
                                 placeholder="Write the full blog content here."
-                                className="w-full resize-none rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm leading-7 text-white outline-none placeholder:text-white/35 focus:border-white/20"
+                                className="h-[clamp(180px,28vh,260px)] w-full resize-none overflow-y-auto rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm leading-7 text-white outline-none placeholder:text-white/35 focus:border-white/20"
                             />
                             {fieldErrors.content ? (
                                 <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.content[0]}</p>
@@ -429,16 +430,17 @@ export function BlogsPage() {
                 ) : null}
             </SectionCard>
 
-            <Modal
-                isOpen={isCreateOpen}
-                onClose={() => setIsCreateOpen(false)}
-                eyebrow="Create"
-                title="Create a blog post"
-                description="Share a lesson, tutorial, or community story. Keep it clear and useful."
-                footer={(
-                    <div className="flex flex-wrap items-center justify-end gap-3">
-                        <button
-                            type="button"
+                <Modal
+                    isOpen={isCreateOpen}
+                    onClose={() => setIsCreateOpen(false)}
+                    eyebrow="Create"
+                    title="Create a blog post"
+                    description="Share a lesson, tutorial, or community story. Keep it clear and useful."
+                    variant="section"
+                    footer={(
+                        <div className="flex flex-wrap items-center justify-end gap-3">
+                            <button
+                                type="button"
                             onClick={() => setIsCreateOpen(false)}
                             className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-[#FFF3DC] transition hover:bg-white/10"
                         >
@@ -453,13 +455,13 @@ export function BlogsPage() {
                             {isSubmitting ? 'Publishing…' : 'Create blog'}
                         </button>
                     </div>
-                )}
-            >
-                <form id="create-blog-form" onSubmit={handleCreateBlog} className="grid gap-4">
-                    <div>
-                        <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
-                            Blog title
-                        </label>
+                    )}
+                >
+                    <form id="create-blog-form" onSubmit={handleCreateBlog} className="grid gap-3">
+                        <div>
+                            <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                Blog title
+                            </label>
                         <input
                             type="text"
                             name="title"
@@ -500,22 +502,22 @@ export function BlogsPage() {
                         ) : null}
                     </div>
 
-                    <div>
-                        <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
-                            Blog content
-                        </label>
-                        <textarea
-                            name="content"
-                            value={form.content}
-                            onChange={handleInputChange}
-                            rows="8"
-                            placeholder="Write the full blog content here."
-                            className="w-full resize-none rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm leading-7 text-white outline-none placeholder:text-white/35 focus:border-white/20"
-                        />
-                        {fieldErrors.content ? (
-                            <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.content[0]}</p>
-                        ) : null}
-                    </div>
+                        <div>
+                            <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                Blog content
+                            </label>
+                            <textarea
+                                name="content"
+                                value={form.content}
+                                onChange={handleInputChange}
+                                rows="6"
+                                placeholder="Write the full blog content here."
+                                className="h-[clamp(180px,28vh,260px)] w-full resize-none overflow-y-auto rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm leading-7 text-white outline-none placeholder:text-white/35 focus:border-white/20"
+                            />
+                            {fieldErrors.content ? (
+                                <p className="mt-2 text-xs font-bold text-[#FFD327]">{fieldErrors.content[0]}</p>
+                            ) : null}
+                        </div>
 
                     {formError ? (
                         <p className="text-sm font-bold text-[#FFD327]">{formError}</p>

@@ -31,6 +31,20 @@ function getQuestionStatusLabel(question, answers) {
     return 'Needs answers';
 }
 
+function getQuestionAnswerCount(question, answers) {
+    const liveCount = Number(question?.live_answers_count);
+    if (Number.isFinite(liveCount)) {
+        return liveCount;
+    }
+
+    const storedCount = Number(question?.answers_count);
+    if (Number.isFinite(storedCount)) {
+        return storedCount;
+    }
+
+    return Array.isArray(answers) ? answers.length : 0;
+}
+
 export function QuestionDetailsPage() {
     const { user } = useAuth();
     const { questionId } = useParams();
@@ -104,7 +118,8 @@ export function QuestionDetailsPage() {
             setAnswers((currentAnswers) => [createdAnswer, ...currentAnswers]);
             setQuestion((currentQuestion) => ({
                 ...currentQuestion,
-                answers_count: (currentQuestion?.answers_count || 0) + 1,
+                live_answers_count:
+                    Number(currentQuestion?.live_answers_count ?? currentQuestion?.answers_count ?? 0) + 1,
             }));
             setAnswerContent('');
         } catch (requestError) {
@@ -253,7 +268,7 @@ export function QuestionDetailsPage() {
                         Back to questions
                     </Link>
                     <span className="rounded-full border-2 border-black bg-[#FFF3DC] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)]">
-                        {answers.length} answers
+                        {getQuestionAnswerCount(question, answers)} answers
                     </span>
                     <span className="rounded-full border-2 border-black bg-[#FFD327] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-black shadow-[4px_4px_0_rgba(0,0,0,0.85)]">
                         {getQuestionStatusLabel(question, answers)}
@@ -296,7 +311,7 @@ export function QuestionDetailsPage() {
 
                     <div className="mt-5 flex flex-wrap gap-3 text-sm font-bold text-[#4d4239]">
                         <span className="rounded-full bg-black px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-[#FFF3DC]">
-                            {answers.length} answers
+                            {getQuestionAnswerCount(question, answers)} answers
                         </span>
                         <span className="rounded-full bg-white/60 px-4 py-2">
                             {getQuestionStatusLabel(question, answers)}

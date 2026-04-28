@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { BadgeEmblem } from '../../../shared/components/BadgeEmblem';
 import { UserAvatar } from '../../../shared/components/UserAvatar';
 import { Modal } from '../../../shared/ui/overlay/Modal';
 import { banUser, getUser, restoreUser } from '../../../services/api/users.service';
@@ -36,6 +37,13 @@ function formatRole(value) {
     const raw = String(value);
     if (raw === 'bde_membre') return 'BDE';
     return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
+function formatInterestType(value) {
+    if (!value) return '--';
+    return String(value)
+        .replaceAll('_', ' ')
+        .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function formatDate(value) {
@@ -83,7 +91,63 @@ function computeStatusCounts(users) {
     }, {});
 }
 
-export function UserIntelligenceTable({ users = [], mode = 'admin', currentUserId = null }) {
+function DashboardStatsTable({ title, description, columns, rows, emptyMessage }) {
+    return (
+        <div className="overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,10,30,0.94)_0%,rgba(9,5,26,0.88)_100%)] shadow-[5px_5px_0_rgba(0,0,0,0.72)]">
+            <div className="border-b border-white/10 bg-[linear-gradient(135deg,rgba(37,242,160,0.1)_0%,rgba(41,207,255,0.08)_45%,rgba(163,77,255,0.08)_100%)] px-5 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[#25F2A0]">{title}</p>
+                    <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#FFF3DC]">
+                        {rows.length} rows
+                    </span>
+                </div>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-[#d8cfbd]">{description}</p>
+            </div>
+
+            <div className="max-h-[460px] overflow-auto">
+                <table className="w-full min-w-[760px] border-separate border-spacing-0">
+                    <thead>
+                        <tr className="text-left text-[11px] font-black uppercase tracking-[0.16em] text-[#d8cfbd]">
+                            {columns.map((column) => (
+                                <th key={column.key} className="sticky top-0 z-10 border-b border-white/10 bg-[#120b27] px-4 py-3 backdrop-blur">
+                                    {column.label}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows.length ? (
+                            rows.map((row, rowIndex) => (
+                                <tr
+                                    key={row.key}
+                                    className={[
+                                        'text-sm text-[#FFF3DC] transition',
+                                        rowIndex % 2 === 0 ? 'bg-white/[0.02]' : 'bg-transparent',
+                                        'hover:bg-white/[0.06]',
+                                    ].join(' ')}
+                                >
+                                    {row.cells.map((cell, index) => (
+                                        <td key={`${row.key}-${columns[index]?.key || index}`} className="border-b border-white/5 px-4 py-3.5 align-top">
+                                            {cell}
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan={columns.length} className="px-4 py-8 text-sm leading-7 text-[#d8cfbd]">
+                                    {emptyMessage}
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+}
+
+export function UserIntelligenceTable({ users = [], badges = [], interests = [], tags = [], mode = 'admin', currentUserId = null }) {
     // Body filled in next patch chunks (kept small to avoid Windows patch size limits).
     const [campusFilter, setCampusFilter] = useState('all');
     const [roleFilter, setRoleFilter] = useState('all');
@@ -150,6 +214,15 @@ export function UserIntelligenceTable({ users = [], mode = 'admin', currentUserI
 
     const campusCounts = useMemo(() => computeCampusCounts(allowedUsers), [allowedUsers]);
     const statusCounts = useMemo(() => computeStatusCounts(allowedUsers), [allowedUsers]);
+    const sortedBadges = useMemo(() => {
+        return [...badges].sort((left, right) => String(left?.name || '').localeCompare(String(right?.name || '')));
+    }, [badges]);
+    const sortedInterests = useMemo(() => {
+        return [...interests].sort((left, right) => String(left?.name || '').localeCompare(String(right?.name || '')));
+    }, [interests]);
+    const sortedTags = useMemo(() => {
+        return [...tags].sort((left, right) => String(left?.name || '').localeCompare(String(right?.name || '')));
+    }, [tags]);
 
     async function handleOpenDetails(userId) {
         if (!userId) return;
@@ -218,7 +291,7 @@ export function UserIntelligenceTable({ users = [], mode = 'admin', currentUserI
     }
 
     return (
-        <div className="rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.03)_100%)] p-5 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
+        <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.03)_100%)] p-5 shadow-[5px_5px_0_rgba(0,0,0,0.8)]">
             {actionMessage ? (
                 <div className="mb-4 flex justify-end">
                     <div
@@ -235,6 +308,7 @@ export function UserIntelligenceTable({ users = [], mode = 'admin', currentUserI
                     </div>
                 </div>
             ) : null}
+            <div className="rounded-[1.6rem] border border-white/10 bg-[linear-gradient(135deg,rgba(163,77,255,0.08)_0%,rgba(41,207,255,0.07)_46%,rgba(37,242,160,0.06)_100%)] p-4">
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <p className="text-xs font-black uppercase tracking-[0.2em] text-[#25F2A0]">User intelligence</p>
@@ -269,19 +343,20 @@ export function UserIntelligenceTable({ users = [], mode = 'admin', currentUserI
                     ))}
                 </div>
             </div>
+            </div>
 
-            <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_190px_190px_190px]">
+            <div className="mt-5 grid gap-3 rounded-[1.6rem] border border-white/10 bg-[#0c071c]/80 p-4 lg:grid-cols-[1fr_190px_190px_190px]">
                 <input
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder="Search name, email, class..."
-                    className="w-full rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/20"
+                    className="w-full rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 transition focus:border-[#29CFFF] focus:ring-2 focus:ring-[#29CFFF]/20"
                 />
 
                 <select
                     value={campusFilter}
                     onChange={(event) => setCampusFilter(event.target.value)}
-                    className="w-full rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none focus:border-white/20"
+                    className="w-full rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none transition focus:border-[#29CFFF] focus:ring-2 focus:ring-[#29CFFF]/20"
                 >
                     {CAMPUS_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -293,7 +368,7 @@ export function UserIntelligenceTable({ users = [], mode = 'admin', currentUserI
                 <select
                     value={roleFilter}
                     onChange={(event) => setRoleFilter(event.target.value)}
-                    className="w-full rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none focus:border-white/20"
+                    className="w-full rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none transition focus:border-[#29CFFF] focus:ring-2 focus:ring-[#29CFFF]/20"
                 >
                     {ROLE_OPTIONS.filter((option) =>
                         mode === 'formateur'
@@ -309,7 +384,7 @@ export function UserIntelligenceTable({ users = [], mode = 'admin', currentUserI
                 <select
                     value={statusFilter}
                     onChange={(event) => setStatusFilter(event.target.value)}
-                    className="w-full rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none focus:border-white/20"
+                    className="w-full rounded-[1.4rem] border border-white/10 bg-[#05020d] px-4 py-3 text-sm text-white outline-none transition focus:border-[#29CFFF] focus:ring-2 focus:ring-[#29CFFF]/20"
                 >
                     {STATUS_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -319,25 +394,25 @@ export function UserIntelligenceTable({ users = [], mode = 'admin', currentUserI
                 </select>
             </div>
 
-            <div className="mt-5 overflow-hidden rounded-[1.6rem] border border-white/10 bg-[#09051a]/70">
+            <div className="mt-5 overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(18,11,39,0.96)_0%,rgba(9,5,26,0.88)_100%)] shadow-[5px_5px_0_rgba(0,0,0,0.72)]">
                 {/* Desktop/tablet table */}
                 <div className="hidden max-h-[460px] overflow-auto md:block">
-                    <table className="w-full min-w-[980px] border-collapse">
+                    <table className="w-full min-w-[980px] border-separate border-spacing-0">
                         <thead>
-                            <tr className="border-b border-white/10 text-left text-[11px] font-black uppercase tracking-[0.16em] text-[#d8cfbd]">
-                                <th className="px-4 py-3">User</th>
-                                <th className="px-4 py-3">Status</th>
-                                <th className="px-4 py-3">Campus</th>
-                                <th className="px-4 py-3">Role</th>
-                                <th className="px-4 py-3">Last seen</th>
-                                <th className="px-4 py-3">Joined</th>
-                                <th className="px-4 py-3 text-right">Reputation</th>
-                                <th className="px-4 py-3 text-right">Actions</th>
+                            <tr className="text-left text-[11px] font-black uppercase tracking-[0.16em] text-[#d8cfbd]">
+                                <th className="sticky top-0 z-10 border-b border-white/10 bg-[#120b27] px-4 py-3 backdrop-blur">User</th>
+                                <th className="sticky top-0 z-10 border-b border-white/10 bg-[#120b27] px-4 py-3 backdrop-blur">Status</th>
+                                <th className="sticky top-0 z-10 border-b border-white/10 bg-[#120b27] px-4 py-3 backdrop-blur">Campus</th>
+                                <th className="sticky top-0 z-10 border-b border-white/10 bg-[#120b27] px-4 py-3 backdrop-blur">Role</th>
+                                <th className="sticky top-0 z-10 border-b border-white/10 bg-[#120b27] px-4 py-3 backdrop-blur">Last seen</th>
+                                <th className="sticky top-0 z-10 border-b border-white/10 bg-[#120b27] px-4 py-3 backdrop-blur">Joined</th>
+                                <th className="sticky top-0 z-10 border-b border-white/10 bg-[#120b27] px-4 py-3 text-right backdrop-blur">Reputation</th>
+                                <th className="sticky top-0 z-10 border-b border-white/10 bg-[#120b27] px-4 py-3 text-right backdrop-blur">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filtered.length ? (
-                                filtered.map((u) => {
+                                filtered.map((u, rowIndex) => {
                                     const statusMeta = getStatusMeta(u?.status);
                                     const isSelf = currentUserId && String(u?.id) === String(currentUserId);
                                     const canManage = mode === 'admin' && !isSelf;
@@ -351,9 +426,13 @@ export function UserIntelligenceTable({ users = [], mode = 'admin', currentUserI
                                     return (
                                         <tr
                                             key={u.id}
-                                            className="border-b border-white/5 text-sm text-[#FFF3DC] transition hover:bg-white/5"
+                                            className={[
+                                                'text-sm text-[#FFF3DC] transition',
+                                                rowIndex % 2 === 0 ? 'bg-white/[0.02]' : 'bg-transparent',
+                                                'hover:bg-white/[0.06]',
+                                            ].join(' ')}
                                         >
-                                            <td className="px-4 py-3">
+                                            <td className="border-b border-white/5 px-4 py-3.5">
                                                 <div className="flex min-w-0 items-center gap-3">
                                                     <UserAvatar name={u?.name} photo={u?.photo} size="sm" />
                                                     <div className="min-w-0">
@@ -377,7 +456,7 @@ export function UserIntelligenceTable({ users = [], mode = 'admin', currentUserI
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3">
+                                            <td className="border-b border-white/5 px-4 py-3.5">
                                                 <span
                                                     className={[
                                                         'inline-flex rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em]',
@@ -387,26 +466,26 @@ export function UserIntelligenceTable({ users = [], mode = 'admin', currentUserI
                                                     {statusMeta.label}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3">
+                                            <td className="border-b border-white/5 px-4 py-3.5">
                                                 <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#FFF3DC]">
                                                     {formatCampus(u?.campus)}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3">
+                                            <td className="border-b border-white/5 px-4 py-3.5">
                                                 <span className="inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#d8cfbd]">
                                                     {formatRole(u?.role)}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 font-black text-[#d8cfbd]">
+                                            <td className="border-b border-white/5 px-4 py-3.5 font-black text-[#d8cfbd]">
                                                 <span title={u?.last_seen ? formatDate(u.last_seen) : ''}>
                                                     {formatRelativeTime(u?.last_seen)}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 font-black text-[#d8cfbd]">{formatDate(u?.created_at)}</td>
-                                            <td className="px-4 py-3 text-right font-black text-[#25F2A0]">
+                                            <td className="border-b border-white/5 px-4 py-3.5 font-black text-[#d8cfbd]">{formatDate(u?.created_at)}</td>
+                                            <td className="border-b border-white/5 px-4 py-3.5 text-right font-black text-[#25F2A0]">
                                                 {Number(u?.reputation || 0).toLocaleString()}
                                             </td>
-                                            <td className="px-4 py-3">
+                                            <td className="border-b border-white/5 px-4 py-3.5">
                                                 <div className="flex justify-end gap-2">
                                                     <button
                                                         type="button"
@@ -470,7 +549,7 @@ export function UserIntelligenceTable({ users = [], mode = 'admin', currentUserI
                             return (
                                 <div
                                     key={u.id}
-                                    className="rounded-[1.4rem] border border-white/10 bg-white/5 p-4 shadow-[4px_4px_0_rgba(0,0,0,0.75)]"
+                                    className="rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0.03)_100%)] p-4 shadow-[4px_4px_0_rgba(0,0,0,0.75)]"
                                 >
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="flex min-w-0 items-center gap-3">
@@ -495,7 +574,7 @@ export function UserIntelligenceTable({ users = [], mode = 'admin', currentUserI
                                     </div>
 
                                     <div className="mt-3 flex flex-wrap gap-2">
-                                        <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#FFF3DC]">
+                                        <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#FFF3DC] shadow-[2px_2px_0_rgba(0,0,0,0.35)]">
                                             {formatCampus(u?.campus)}
                                         </span>
                                         <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#d8cfbd]">
@@ -566,6 +645,111 @@ export function UserIntelligenceTable({ users = [], mode = 'admin', currentUserI
                     )}
                 </div>
             </div>
+
+            {mode === 'admin' ? (
+                <div className="mt-6 grid gap-4">
+                    <div className="rounded-[1.6rem] border border-white/10 bg-[linear-gradient(135deg,rgba(37,242,160,0.08)_0%,rgba(41,207,255,0.05)_50%,rgba(163,77,255,0.05)_100%)] p-4">
+                        <div className="flex flex-wrap items-end justify-between gap-3">
+                        <div>
+                            <p className="text-xs font-black uppercase tracking-[0.2em] text-[#25F2A0]">Catalog statistics</p>
+                            <p className="mt-2 text-sm leading-7 text-[#d8cfbd]">
+                                Read-only tables for badges, interests, and tags so admins can scan the full platform catalog directly from the dashboard.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#d8cfbd]">
+                                {sortedBadges.length} badges
+                            </span>
+                            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#d8cfbd]">
+                                {sortedInterests.length} interests
+                            </span>
+                            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#d8cfbd]">
+                                {sortedTags.length} tags
+                            </span>
+                        </div>
+                    </div>
+                    </div>
+
+                    <DashboardStatsTable
+                        title="Badge table"
+                        description="Every badge with its description, icon source, and required points."
+                        columns={[
+                            { key: 'badge', label: 'Badge' },
+                            { key: 'description', label: 'Description' },
+                            { key: 'icon', label: 'Icon' },
+                            { key: 'points', label: 'Points' },
+                        ]}
+                        rows={sortedBadges.map((badge) => ({
+                            key: badge.id,
+                            cells: [
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <BadgeEmblem
+                                        badge={badge}
+                                        gradientClassName="from-[#29CFFF] via-[#25F2A0] to-[#FFD327]"
+                                        sizeClassName="h-11 w-11"
+                                    />
+                                    <div className="min-w-0">
+                                        <p className="truncate font-black text-[#FFF3DC]">{badge?.name || 'Badge'}</p>
+                                    </div>
+                                </div>,
+                                <p className="max-w-[260px] leading-6 text-[#d8cfbd] break-words">{badge?.description || 'No description.'}</p>,
+                                <span className="max-w-[180px] break-all text-[#d8cfbd]">{badge?.icon || 'Initial fallback'}</span>,
+                                <div className="inline-flex w-[92px] flex-col items-center justify-center rounded-[1.35rem] border border-[#ffe28a] bg-[linear-gradient(180deg,#FFE27A_0%,#FFD327_52%,#F2B705_100%)] px-3 py-2 text-black shadow-[0_10px_24px_rgba(255,211,39,0.22),3px_3px_0_rgba(0,0,0,0.35)]">
+                                    <span className="text-[1.1rem] font-black leading-none tracking-[-0.03em]">
+                                        {Number(badge?.points_required || 0)}
+                                    </span>
+                                    <span className="mt-1 text-[9px] font-black uppercase tracking-[0.22em] text-black/70">
+                                        Points
+                                    </span>
+                                </div>,
+                            ],
+                        }))}
+                        emptyMessage="No badges are available yet."
+                    />
+
+                    <DashboardStatsTable
+                        title="Interest table"
+                        description="All interests with their type and icon key."
+                        columns={[
+                            { key: 'interest', label: 'Interest' },
+                            { key: 'type', label: 'Type' },
+                            { key: 'icon', label: 'Icon key' },
+                        ]}
+                        rows={sortedInterests.map((interest) => ({
+                            key: interest.id,
+                            cells: [
+                                <p className="font-black text-[#FFF3DC]">{interest?.name || 'Interest'}</p>,
+                                <span className="inline-flex rounded-full border border-white/10 bg-[#071b2c] px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#8de1ff]">
+                                    {formatInterestType(interest?.type)}
+                                </span>,
+                                <span className="text-[#d8cfbd]">{interest?.icon || 'No icon key'}</span>,
+                            ],
+                        }))}
+                        emptyMessage="No interests are available yet."
+                    />
+
+                    <DashboardStatsTable
+                        title="Tag table"
+                        description="All tags with their descriptions and question usage count."
+                        columns={[
+                            { key: 'tag', label: 'Tag' },
+                            { key: 'description', label: 'Description' },
+                            { key: 'questions', label: 'Questions' },
+                        ]}
+                        rows={sortedTags.map((tag) => ({
+                            key: tag.id,
+                            cells: [
+                                <p className="font-black text-[#FFF3DC]">{tag?.name || 'Tag'}</p>,
+                                <p className="max-w-[280px] leading-6 text-[#d8cfbd] break-words">{tag?.description || 'No description.'}</p>,
+                                <span className="inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#FFF3DC]">
+                                    {Number(tag?.questions_count || 0)}
+                                </span>,
+                            ],
+                        }))}
+                        emptyMessage="No tags are available yet."
+                    />
+                </div>
+            ) : null}
 
             <Modal
                 isOpen={isDetailsOpen}

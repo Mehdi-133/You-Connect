@@ -62,16 +62,16 @@ export function BlogFeedCard({
     }, []);
 
     return (
-        <article className="group relative isolate mx-auto w-full md:w-[86%] max-w-[1080px] overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0.02)_100%)] text-white shadow-[0_18px_60px_rgba(0,0,0,0.45)] backdrop-blur transition hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_26px_80px_rgba(0,0,0,0.55)]">
+        <article className="group relative isolate mx-auto w-full max-w-[1080px] overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0.02)_100%)] text-white shadow-[0_18px_60px_rgba(0,0,0,0.45)] backdrop-blur transition hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_26px_80px_rgba(0,0,0,0.55)] md:h-[320px] md:w-[86%]">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(163,77,255,0.14),transparent_32%),radial-gradient(circle_at_10%_20%,rgba(37,242,160,0.10),transparent_28%),radial-gradient(circle_at_85%_90%,rgba(255,211,39,0.10),transparent_30%)] opacity-90" />
 
-            <div className="relative md:flex">
+            <div className="relative md:flex md:h-full">
                 <Link
                     to={blogHref}
                     className="relative block border-b border-white/10 md:w-[300px] md:shrink-0 md:border-b-0 md:border-r"
                     aria-label={`Open blog: ${blog.title}`}
                 >
-                    <div className="relative h-52 bg-black/30 sm:h-60 md:h-full md:min-h-[260px]">
+                    <div className="relative h-52 bg-black/30 sm:h-60 md:h-full">
                         {blog.photo ? (
                             <img
                                 src={blog.photo}
@@ -91,7 +91,7 @@ export function BlogFeedCard({
                     </div>
                 </Link>
 
-                <div className="relative flex min-w-0 flex-1 flex-col p-5 sm:p-6">
+                <div className="relative flex min-w-0 flex-1 flex-col p-5 sm:p-6 md:h-full">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex flex-wrap items-center gap-2">
                             <span
@@ -268,7 +268,7 @@ export function BlogFeedCard({
                                 <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
                                     <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" />
                                 </svg>
-                                <span>{blog.comments?.length || 0}</span>
+                                <span>{blog.comments_count ?? blog.comments?.length ?? 0}</span>
                             </Link>
                         </div>
 

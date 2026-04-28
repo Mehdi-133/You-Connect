@@ -380,6 +380,7 @@ export function EventsPage() {
                 eyebrow="Create"
                 title="Create an event"
                 description="Make the details clear so members can join with confidence."
+                variant="section"
                 footer={(
                     <div className="flex flex-wrap items-center justify-end gap-3">
                         <button

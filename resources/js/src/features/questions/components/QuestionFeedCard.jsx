@@ -6,12 +6,16 @@ function formatCount(value) {
     return Number.isFinite(number) ? number.toLocaleString() : '0';
 }
 
+function getAnswerCount(question) {
+    return Number(question?.live_answers_count ?? question?.answers_count ?? 0);
+}
+
 function getStatusLabel(question) {
     if (question.status === 'closed') {
         return 'Closed';
     }
 
-    if ((question.answers_count || 0) > 0) {
+    if (getAnswerCount(question) > 0) {
         return 'Active discussion';
     }
 
@@ -50,7 +54,7 @@ export function QuestionFeedCard({ question }) {
 
                 <div className="flex shrink-0 flex-wrap justify-end gap-2">
                     <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white/80">
-                        {formatCount(question.answers_count)} answers
+                        {formatCount(getAnswerCount(question))} answers
                     </span>
                     <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white/80">
                         {getStatusLabel(question)}

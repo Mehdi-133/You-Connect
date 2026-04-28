@@ -22,6 +22,8 @@ const CAMPUS_OPTIONS = [
 const CLASS_OPTIONS = [
     { value: 'dev room', label: 'Dev room' },
     { value: 'dar hamza', label: 'Dar hamza' },
+    { value: 'JavaDore', label: 'JavaDore' },
+    { value: 'ligue.js', label: 'ligue.js' },
 ];
 
 function createEmptyForm() {

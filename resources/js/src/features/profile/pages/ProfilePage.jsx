@@ -43,6 +43,29 @@ function formatLastSeen(value) {
     return `Seen ${date.toLocaleDateString()}`;
 }
 
+function formatCampus(value) {
+    if (!value) {
+        return 'Not set';
+    }
+
+    const raw = String(value).toLowerCase();
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
+function formatJoinedAt(value) {
+    if (!value) {
+        return 'Not available';
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return 'Not available';
+    }
+
+    return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
+}
+
 function getProfileHighlights(profile, reputation) {
     return [
         {
@@ -94,26 +117,25 @@ function formatAwardedAt(value) {
 
 function getReputationDetails(scoreValue) {
     const score = Number(scoreValue) || 0;
+    const limit = 1000;
+    const cappedScore = Math.min(score, limit);
     const milestones = [
         { min: 0, max: 49, label: 'New member', nextLabel: 'Active learner' },
         { min: 50, max: 149, label: 'Active learner', nextLabel: 'Rising contributor' },
         { min: 150, max: 299, label: 'Rising contributor', nextLabel: 'Trusted builder' },
         { min: 300, max: 499, label: 'Trusted builder', nextLabel: 'Community standout' },
-        { min: 500, max: Infinity, label: 'Community standout', nextLabel: null },
+        { min: 500, max: limit, label: 'Community standout', nextLabel: null },
     ];
 
-    const currentTier = milestones.find((tier) => score >= tier.min && score <= tier.max) || milestones[0];
-    const span = currentTier.max === Infinity ? 1 : currentTier.max - currentTier.min + 1;
-    const progressValue = currentTier.max === Infinity
-        ? 100
-        : Math.min(100, Math.round(((score - currentTier.min) / span) * 100));
+    const currentTier = milestones.find((tier) => cappedScore >= tier.min && cappedScore <= tier.max) || milestones[0];
+    const progressValue = limit ? Math.min(100, Math.round((cappedScore / limit) * 100)) : 0;
 
     return {
         score,
         label: currentTier.label,
-        nextLabel: currentTier.nextLabel,
-        currentFloor: currentTier.min,
-        nextMilestone: currentTier.max === Infinity ? null : currentTier.max + 1,
+        nextLabel: score >= limit ? null : `${limit} points`,
+        currentFloor: 0,
+        nextMilestone: score >= limit ? null : limit,
         progressValue,
     };
 }
@@ -477,17 +499,38 @@ export function ProfilePage() {
 
                         <div className="mt-6 grid gap-3 text-sm text-[#d8cfbd]">
                             <div className="rounded-[1.3rem] border border-white/10 bg-white/5 px-4 py-3">
-                                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#25F2A0]">
-                                    Profile snapshot
-                                </p>
-                                <div className="mt-3 grid gap-3">
-                                    <div>
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#25F2A0]">
+                                        Profile snapshot
+                                    </p>
+                                    <span className="rounded-full border border-white/10 bg-[#09051a]/70 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#FFF3DC]">
+                                        {reputationDetails.label}
+                                    </span>
+                                </div>
+
+                                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                    <div className="rounded-[1.1rem] border border-white/10 bg-[#09051a]/60 px-3 py-3">
+                                        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#9be7c4]">Campus</p>
+                                        <p className="mt-1 font-semibold text-[#FFF3DC]">
+                                            {formatCampus(profile.campus)}
+                                        </p>
+                                    </div>
+
+                                    <div className="rounded-[1.1rem] border border-white/10 bg-[#09051a]/60 px-3 py-3">
                                         <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#9be7c4]">Class</p>
                                         <p className="mt-1 font-semibold text-[#FFF3DC]">
                                             {profile.class || 'Not specified yet'}
                                         </p>
                                     </div>
-                                    <div>
+
+                                    <div className="rounded-[1.1rem] border border-white/10 bg-[#09051a]/60 px-3 py-3">
+                                        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#9be7c4]">Joined</p>
+                                        <p className="mt-1 font-semibold text-[#FFF3DC]">
+                                            {formatJoinedAt(profile.created_at)}
+                                        </p>
+                                    </div>
+
+                                    <div className="rounded-[1.1rem] border border-white/10 bg-[#09051a]/60 px-3 py-3">
                                         <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#9be7c4]">Last activity</p>
                                         <p className="mt-1 font-semibold text-[#FFF3DC]">
                                             {formatLastSeen(profile.last_seen)}
@@ -504,6 +547,34 @@ export function ProfilePage() {
                             <p className="mt-3 text-sm leading-7 text-[#FFF3DC]">
                                 {profile.bio || 'Add a short bio so people can understand what you are learning and contributing.'}
                             </p>
+                        </div>
+
+                        <div className="mt-6 rounded-[1.6rem] border border-white/10 bg-white/5 p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#29CFFF]">
+                                    Interests
+                                </p>
+                                <span className="rounded-full border border-white/10 bg-[#09051a]/70 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#FFF3DC]">
+                                    {profile.interests?.length ?? 0}
+                                </span>
+                            </div>
+
+                            {profile.interests?.length ? (
+                                <div className="mt-4 flex flex-wrap gap-2">
+                                    {profile.interests.slice(0, 10).map((interest) => (
+                                        <span
+                                            key={interest.id}
+                                            className="rounded-full border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.04)_100%)] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-[#FFF3DC]"
+                                        >
+                                            {interest.name}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="mt-3 text-sm leading-7 text-[#d8cfbd]">
+                                    Add interests so people can quickly see what you are learning.
+                                </p>
+                            )}
                         </div>
                     </div>
 

@@ -280,6 +280,7 @@ export function QuestionsPage() {
                     eyebrow="Create"
                     title="Ask a question"
                     description="Be specific and tag the topic so mentors can find it quickly."
+                    variant="section"
                     footer={(
                         <div className="flex flex-wrap items-center justify-end gap-3">
                             <button
@@ -623,6 +624,7 @@ export function QuestionsPage() {
                 eyebrow="Create"
                 title="Ask a question"
                 description="Be specific and tag the topic so mentors can find it quickly."
+                variant="section"
                 footer={(
                     <div className="flex flex-wrap items-center justify-end gap-3">
                         <button

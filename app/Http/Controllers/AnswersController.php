@@ -23,14 +23,6 @@ class AnswersController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
     public function store(StoreAnswersRequest $request, NotificationService $notificationService)
@@ -122,6 +114,7 @@ class AnswersController extends Controller
         NotificationService $notificationService,
         ReputationService $reputationService
     )
+    
     {
         $this->authorize('accept', $answer);
         $wasAccepted = $answer->is_accepted;

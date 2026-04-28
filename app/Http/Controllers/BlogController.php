@@ -21,7 +21,13 @@ class BlogController extends Controller
     public function index()
     {
         $this->authorize('viewAny', Blog::class);
-        return Blog::with('youCoder:id,name,photo')->latest()->paginate(10);
+        $perPage = (int) request()->query('per_page', 10);
+        $perPage = max(1, min($perPage, 50));
+
+        return Blog::with('youCoder:id,name,photo')
+            ->withCount('comments')
+            ->latest()
+            ->paginate($perPage);
     }
 
     /**
@@ -80,7 +86,10 @@ class BlogController extends Controller
     public function show(Blog $blog)
     {
         $this->authorize('view', $blog);
-        return $blog->load(['youCoder:id,name,photo', 'comments']);
+        return $blog->load([
+            'youCoder:id,name,photo',
+            'comments.youCoder:id,name,photo',
+        ]);
     }
 
     /**

@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { getBlogs } from '../../../services/api/blogs.service';
 import { getNotifications } from '../../../services/api/notifications.service';
 import { getQuestions } from '../../../services/api/questions.service';
-import { getUser, getUserScore, getUsers } from '../../../services/api/users.service';
+import { getUser, getUserScore, getUsers, getBadges, getInterests } from '../../../services/api/users.service';
 import { getClubs } from '../../../services/api/clubs.service';
 import { getEvents } from '../../../services/api/events.service';
+import { getTags } from '../../../services/api/tags.service';
 import { isAdmin, isBdeMembre, isFormateur } from '../../../shared/utils/roles';
 
 function getErrorMessage(error) {
@@ -24,6 +25,9 @@ export function useDashboardData(user) {
         questions: [],
         blogs: [],
         users: [],
+        badges: [],
+        interests: [],
+        tags: [],
         usersTotal: 0,
         clubs: [],
         clubsTotal: 0,
@@ -84,6 +88,12 @@ export function useDashboardData(user) {
                         requests.push(getUsers({ per_page: 100 }));
                     }
 
+                    if (isAdmin(user)) {
+                        requests.push(getBadges({ per_page: 100 }));
+                        requests.push(getInterests({ per_page: 100 }));
+                        requests.push(getTags({ per_page: 100 }));
+                    }
+
                     if (isBdeMembre(user)) {
                         requests.push(getClubs({ per_page: 6 }));
                         requests.push(getEvents({ per_page: 6 }));
@@ -94,6 +104,9 @@ export function useDashboardData(user) {
                 const [profile, scoreResponse, notificationResponse, questionResponse, blogResponse, ...optionalResponses] = responses;
 
                 let usersResponse = null;
+                let badgesResponse = null;
+                let interestsResponse = null;
+                let tagsResponse = null;
                 let clubsResponse = null;
                 let eventsResponse = null;
                 let optionalIndex = 0;
@@ -101,6 +114,13 @@ export function useDashboardData(user) {
                 if (isAdmin(user) || isFormateur(user)) {
                     usersResponse = optionalResponses[optionalIndex];
                     optionalIndex += 1;
+                }
+
+                if (isAdmin(user)) {
+                    badgesResponse = optionalResponses[optionalIndex];
+                    interestsResponse = optionalResponses[optionalIndex + 1];
+                    tagsResponse = optionalResponses[optionalIndex + 2];
+                    optionalIndex += 3;
                 }
 
                 if (isBdeMembre(user)) {
@@ -121,6 +141,9 @@ export function useDashboardData(user) {
                     questions: questionResponse?.data || [],
                     blogs: blogResponse?.data || [],
                     users: usersResponse?.data || [],
+                    badges: badgesResponse?.data || [],
+                    interests: interestsResponse?.data || [],
+                    tags: tagsResponse?.data || [],
                     usersTotal: usersResponse?.total || 0,
                     clubs: clubsResponse?.data || [],
                     clubsTotal: clubsResponse?.total || 0,

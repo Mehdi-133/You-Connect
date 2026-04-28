@@ -15,6 +15,7 @@ class QuestionsController extends Controller
         $tagId = request()->query('tag_id');
 
         $query = Questions::with(['youCoder:id,name,photo', 'tags:id,name'])
+            ->withCount(['answers as live_answers_count'])
             ->latest();
 
         if ($tagId) {
@@ -39,13 +40,18 @@ class QuestionsController extends Controller
             $question->tags()->sync($request->input('tags'));
         }
 
-        return response()->json($question->load('tags'), 201);
+        return response()->json(
+            $question->load('tags')->loadCount(['answers as live_answers_count']),
+            201
+        );
     }
 
     public function show(Questions $question)
     {
         $this->authorize('view', $question);
-        return $question->load(['youCoder:id,name,photo', 'tags:id,name', 'answers']);
+        return $question
+            ->load(['youCoder:id,name,photo', 'tags:id,name', 'answers'])
+            ->loadCount(['answers as live_answers_count']);
     }
 
     public function update(UpdateQuestionsRequest $request, Questions $question)
@@ -58,7 +64,9 @@ class QuestionsController extends Controller
             $question->tags()->sync($request->input('tags') ?? []);
         }
 
-        return response()->json($question->load('tags'));
+        return response()->json(
+            $question->load('tags')->loadCount(['answers as live_answers_count'])
+        );
     }
 
     public function destroy(Questions $question)

@@ -320,6 +320,7 @@ export function ClubsPage() {
                 eyebrow="Create"
                 title="Create a club"
                 description="Launch a club space members can join. Keep the mission clear."
+                variant="section"
                 footer={(
                     <div className="flex flex-wrap items-center justify-end gap-3">
                         <button

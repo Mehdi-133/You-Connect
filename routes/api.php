@@ -118,3 +118,6 @@ Route::middleware('auth:sanctum', 'check.status')->group(function () {
     Route::get('reputations/{reputation}', [ReputationController::class, 'show']);
     Route::get('users/{user}/score', [ReputationController::class, 'userScore']);
 });
+
+
+
